@@ -1,7 +1,7 @@
 export interface MediaImages {
-  backdrops: Image
-  logos: Image
-  posters: Image
+  backdrops?: Image
+  logos?: Image
+  posters?: Image
 }
 
 export interface Image {

@@ -9,16 +9,16 @@ export class TmdbService {
     let url: string
     switch (mediaType) {
       case MediaType.Movie:
-        url = `${tmdbApiBaseUri}/movie/${id}/images?language=en`
+        url = `${tmdbApiBaseUri}/movie/${id}/images`
         break
       case MediaType.Show:
-        url = `${tmdbApiBaseUri}/tv/${id}/images?language=en`
+        url = `${tmdbApiBaseUri}/tv/${id}/images`
         break
       case MediaType.Season:
-        url = `${tmdbApiBaseUri}/tv/${id}/season/${id}images?language=en`
+        url = `${tmdbApiBaseUri}/tv/${id}/season/${id}images`
         break
       case MediaType.Episode:
-        url = `${tmdbApiBaseUri}/tv/${id}/season/${id}/episode/${id}/images?language=en`
+        url = `${tmdbApiBaseUri}/tv/${id}/season/${id}/episode/${id}/images`
         break
     }
     const options = TmdbService.getRequestOptions()
@@ -39,9 +39,15 @@ export class TmdbService {
   }
 
   private static addFullPathAddress = (images: MediaImages) => {
-    images.backdrops.file_path = `https://image.tmdb.org/t/p/original${images.backdrops.file_path}`
-    images.logos.file_path = `https://image.tmdb.org/t/p/original${images.logos.file_path}`
-    images.posters.file_path = `https://image.tmdb.org/t/p/original${images.posters.file_path}`
+    if(images.backdrops) {
+      images.backdrops.file_path = `https://image.tmdb.org/t/p/original${images.backdrops.file_path}`
+    }
+    if(images.logos) {
+      images.logos.file_path = `https://image.tmdb.org/t/p/original${images.logos.file_path}`
+    }
+    if(images.posters) {
+      images.posters.file_path = `https://image.tmdb.org/t/p/original${images.posters.file_path}`
+    }
     return images
   }
 
