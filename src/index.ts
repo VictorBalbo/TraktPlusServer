@@ -3,8 +3,7 @@ import cors from 'cors'
 import { port } from './constants'
 import { TraktController } from './Controllers/TraktController'
 import { TmdbController } from './Controllers/TmdbController'
-
-
+import { MediaController } from './Controllers/MediaController'
 
 export const App: Express = express()
 
@@ -12,6 +11,7 @@ export const App: Express = express()
 App.use(express.json())
 App.use(cors())
 
+App.use(MediaController)
 App.use(TraktController)
 App.use(TmdbController)
 
