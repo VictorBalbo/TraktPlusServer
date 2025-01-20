@@ -7,8 +7,12 @@ export class TraktService {
     const response = await fetch(`${TraktService.traktApiBaseUri}${uri}`, {
       headers: TraktService.getDefaultHeaders(accesstoken),
     })
-    const value = (await response.json()) as T
-    return value
+    if(response.ok) {
+      const value = (await response.json()) as T
+      return value
+    } else {
+      throw new Error(`Error on sending command to Trakt. Code: ${response.status} - Message: ${response.statusText}`)
+    }
   }
 
   private static getDefaultHeaders = (accesstoken: string) => {
