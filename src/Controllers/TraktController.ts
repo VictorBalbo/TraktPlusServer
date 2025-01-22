@@ -1,5 +1,5 @@
-import { trackClientId, trackClientSecret, trackRedirectUrl } from '@/constants'
-import { oAuth } from '@/Models/Trakt'
+import { trackClientId, trackClientSecret, trackRedirectUrl } from '../constants'
+import { oAuth } from '../Models/Trakt'
 import { Router } from 'express'
 export const TraktController = Router()
 

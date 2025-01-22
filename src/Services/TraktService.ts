@@ -1,4 +1,4 @@
-import { trackClientId } from '@/constants'
+import { trackClientId } from '../constants'
 
 export class TraktService {
   private static traktApiBaseUri = 'https://api.trakt.tv'

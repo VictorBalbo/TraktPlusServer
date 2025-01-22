@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import { MediaType } from '@/Models'
-import { TmdbService } from '@/Services'
+import { MediaType } from '../Models'
+import { TmdbService } from '../Services'
 
 export const TmdbController = Router()
 

@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "src/index.ts",
   "scripts": {
-    "build": "tsc && tsc-alias",
-    "start": "node api/index.js",
+    "build": "tsc",
+    "start": "node dist/api/index.js",
     "dev": "nodemon api/index.ts"
   },
   "author": "",
@@ -24,8 +24,6 @@
     "nodemon": "^3.1.9",
     "prettier": "^3.4.2",
     "ts-node": "^10.9.2",
-    "tsc-alias": "^1.8.10",
-    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3"
   }
 }

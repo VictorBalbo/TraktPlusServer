@@ -1,6 +1,6 @@
-import { MediaImages, MediaType } from '@/Models'
-import { GetImagesResponse, TmdbImage } from '@/Models/Tmdb'
-import { tmdbAccessToken } from '@/constants'
+import { MediaImages, MediaType } from '../Models'
+import { GetImagesResponse, TmdbImage } from '../Models/Tmdb'
+import { tmdbAccessToken } from '../constants'
 
 let tmdbApiBaseUri = 'https://api.themoviedb.org/3'
 

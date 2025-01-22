@@ -1,6 +1,6 @@
-import { Media } from "@/Models"
-import { Recommendation } from "@/Models/Trakt"
-import { MediaType } from "@/Models/Media"
+import { Media } from "../Models"
+import { Recommendation } from "../Models/Trakt"
+import { MediaType } from "../Models/Media"
 import { TraktService } from "./TraktService"
 import { TmdbService } from "./TmdbService"
 

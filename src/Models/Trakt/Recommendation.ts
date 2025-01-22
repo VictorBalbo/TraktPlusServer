@@ -1,4 +1,4 @@
-import { Ids } from "@/Models"
+import { Ids } from "../../Models"
 
 export interface Recommendation {
   type: string

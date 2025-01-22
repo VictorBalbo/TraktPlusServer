@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { MediaService } from '@/Services'
+import { MediaService } from '../Services'
 
 export const MediaController = Router()
 

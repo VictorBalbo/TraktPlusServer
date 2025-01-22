@@ -1,4 +1,4 @@
-import { Ids, MediaImages } from '@/Models'
+import { Ids, MediaImages } from '../Models'
 
 
 export interface Media {
