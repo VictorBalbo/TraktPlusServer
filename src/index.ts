@@ -1,10 +1,7 @@
-import 'module-alias/register';
 import express, { Express, Request, Response } from 'express'
 import cors from 'cors'
 import { port } from './constants'
-import { TraktController } from './Controllers/TraktController'
-import { TmdbController } from './Controllers/TmdbController'
-import { MediaController } from './Controllers/MediaController'
+import { MediaController, TmdbController, TraktController } from './Controllers'
 
 export const App: Express = express()
 
