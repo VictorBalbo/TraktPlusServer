@@ -3,21 +3,17 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "build": "npx tsc",
+    "build": "tsc && tsc-alias",
     "start": "node dist/api/index.js",
     "dev": "nodemon api/index.ts"
   },
   "author": "",
   "license": "ISC",
   "description": "",
-  "_moduleAliases": {
-    "@": "dist/src"
-  },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "module-alias": "^2.2.3"
+    "express": "^4.21.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -28,6 +24,8 @@
     "nodemon": "^3.1.9",
     "prettier": "^3.4.2",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.10",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3"
   }
 }
