@@ -1,10 +1,11 @@
 {
+  "version": 2,
   "builds": [
     {
-      "src": "dist/**/*",
-      "use": "@vercel/static"
+      "src": "api/**/*.ts",
+      "use": "@vercel/node"
     }
   ],
-  "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
+  "devCommand": "ts-node -r tsconfig-paths/register api/index.ts"
+
 }
