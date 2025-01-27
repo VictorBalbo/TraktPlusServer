@@ -9,6 +9,7 @@ const oAuthTokenUri = '/oauth/token/:code'
 TraktController.post(oAuthTokenUri, async (req, res, next) => {
   try {
     const code = req.params.code
+    const redirectUri = req.query.redirectUri
     const responsePromise = await fetch(`${traktApiBaseUri}/oauth/token`, {
       method: 'POST',
       headers: {
@@ -19,7 +20,7 @@ TraktController.post(oAuthTokenUri, async (req, res, next) => {
         code: code,
         client_id: trackClientId,
         client_secret: trackClientSecret,
-        redirect_uri: trackRedirectUrl,
+        redirect_uri: redirectUri ?? trackRedirectUrl,
       }),
     })
     const oAuth = await responsePromise.json() as oAuth
