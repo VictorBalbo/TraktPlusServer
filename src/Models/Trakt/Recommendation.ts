@@ -1,13 +1,5 @@
-import { Ids } from "../../Models"
+import { TraktContentResponse } from "."
 
-export interface Recommendation {
+export interface Recommendation extends TraktContentResponse{
   type: string
-  show?: Content
-  movie?: Content
-}
-
-export interface Content {
-  title: string
-  year: number
-  ids: Ids
 }
