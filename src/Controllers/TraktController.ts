@@ -9,7 +9,7 @@ const oAuthTokenUri = '/oauth/token/:code'
 TraktController.post(oAuthTokenUri, async (req, res, next) => {
   try {
     const code = req.params.code
-    const redirectUri = req.query.redirectUri
+    const redirectUri = req.query.redirect_uri
     const responsePromise = await fetch(`${traktApiBaseUri}/oauth/token`, {
       method: 'POST',
       headers: {
