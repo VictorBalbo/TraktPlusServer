@@ -19,29 +19,26 @@ export class MediaService {
       url = `/shows/trending`
     }
 
-    let trending = await TraktService.sendTraktGetRequest<Trending[]>(
+    const trending = await TraktService.sendTraktGetRequest<Trending[]>(
       url,
       accessToken,
     )
-    const medias = await MediaService.fillImages(trending, type)
+    const medias = await MediaService.fillImages(trending)
     return medias
   }
 
-  private static async fillImages(
-    recommendations: TraktContentResponse[],
-    type?: MediaType,
-  ) {
-    const mediasPromise: Promise<Media>[] = recommendations.map(async (r) => {
-      const ids = r.movie?.ids ?? r.show!.ids
-      const mediatype =
-        type ?? (r.type === MediaType.Movie ? MediaType.Movie : MediaType.Show)
+  private static async fillImages(contentResponse: TraktContentResponse[]) {
+    const mediasPromise: Promise<Media>[] = contentResponse.map(async (c) => {
+      let content = c.movie ?? c.show!
+      let mediatype = c.movie ? MediaType.Movie : MediaType.Show
+
       const media: Media = {
         type: mediatype,
-        title: r.movie?.title ?? r.show!.title,
-        ids: ids,
-        year: r.movie?.year ?? r.show!.year,
+        title: content.title,
+        ids: content.ids,
+        year: content.year,
+        images: await TmdbService.getMediaImages(content.ids.tmdb, mediatype),
       }
-      media.images = await TmdbService.getMediaImages(ids.tmdb, mediatype)
       return media
     })
 
