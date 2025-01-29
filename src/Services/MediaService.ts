@@ -2,9 +2,6 @@ import { Media, MediaType } from '../Models'
 import { Recommendation, TraktContentResponse, Trending } from '../Models/Trakt'
 import { TmdbService, TraktService } from '.'
 export class MediaService {
-  private static traktApiBaseUri = 'https://api.trakt.tv'
-  private static tmdbApiBaseUri = 'https://api.themoviedb.org/3'
-
   static getRecommendations = async (accessToken: string) => {
     const url = '/recommendations'
     const recommendations = await TraktService.sendTraktGetRequest<
@@ -37,7 +34,7 @@ export class MediaService {
     const mediasPromise: Promise<Media>[] = recommendations.map(async (r) => {
       const ids = r.movie?.ids ?? r.show!.ids
       const mediatype =
-        (type ?? r.type === MediaType.Movie) ? MediaType.Movie : MediaType.Show
+        type ?? (r.type === MediaType.Movie ? MediaType.Movie : MediaType.Show)
       const media: Media = {
         type: mediatype,
         title: r.movie?.title ?? r.show!.title,
