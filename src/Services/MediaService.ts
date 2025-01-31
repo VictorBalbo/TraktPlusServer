@@ -7,6 +7,7 @@ import {
   WatchedShow,
 } from '../Models/Trakt'
 import { TmdbService, TraktService } from '.'
+import { WatchList } from 'src/Models/Trakt/WatchList'
 
 export class MediaService {
   private static PAGE_SIZE = 25
@@ -70,6 +71,14 @@ export class MediaService {
 
     const upNext = await Promise.all(upNextPromise)
     return upNext.filter(s => s)
+  }
+
+  static getWatchlist = async (accessToken: string) => {
+    let url = '/sync/watchlist'
+
+    const watchlist = await TraktService.sendTraktGetRequest<WatchList[]>(url, accessToken)
+    const medias = await MediaService.fillImages(watchlist)
+    return medias
   }
 
   private static async fillImages(contentResponse: TraktContentResponse[]) {

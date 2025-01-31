@@ -35,3 +35,11 @@ MediaController.get(upNextUri, async (req, res, next) => {
   const recommendations = await MediaService.getUpNextShows(accessToken)
   res.json(recommendations)
 })
+
+const watchlistUri = '/watchlist'
+MediaController.get(watchlistUri, async (req, res, next) => {
+  const accessToken = req.headers.authorization ?? ''
+
+  const recommendations = await MediaService.getWatchlist(accessToken)
+  res.json(recommendations)
+})
