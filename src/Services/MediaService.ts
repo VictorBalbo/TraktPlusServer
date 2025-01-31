@@ -2,12 +2,14 @@ import { Media, MediaType } from '../Models'
 import { Recommendation, TraktContentResponse, Trending } from '../Models/Trakt'
 import { TmdbService, TraktService } from '.'
 export class MediaService {
-  private static PAGE_SIZE = 20
+  private static PAGE_SIZE = 25
+
   static getRecommendations = async (accessToken: string) => {
     const url = '/recommendations'
-    const recommendations = await TraktService.sendTraktGetRequest<
-      Recommendation[]
-    >(url, accessToken)
+    const recommendations = await TraktService.sendTraktGetRequest<Recommendation[]>(
+      url,
+      accessToken,
+    )
     const medias = await MediaService.fillImages(recommendations)
     return medias
   }
@@ -20,10 +22,7 @@ export class MediaService {
       url = `/shows/trending?limit=${MediaService.PAGE_SIZE}`
     }
 
-    const trending = await TraktService.sendTraktGetRequest<Trending[]>(
-      url,
-      accessToken,
-    )
+    const trending = await TraktService.sendTraktGetRequest<Trending[]>(url, accessToken)
     const medias = await MediaService.fillImages(trending)
     return medias
   }

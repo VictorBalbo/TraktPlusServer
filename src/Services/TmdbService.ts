@@ -1,8 +1,14 @@
+import { Image } from 'src/Models/MediaImages'
 import { MediaImages, MediaType } from '../Models'
 import { GetImagesResponse, TmdbImage } from '../Models/Tmdb'
 import { tmdbAccessToken } from '../constants'
 
-let tmdbApiBaseUri = 'https://api.themoviedb.org/3'
+const tmdbApiBaseUri = 'https://api.themoviedb.org/3'
+const imageSizes = {
+  backdrops: ['w300', 'w780', 'w1280'],
+  logos: ['w45', 'w92', 'w154', 'w185', 'w300'],
+  posters: ['w92', 'w154', 'w185', 'w342', 'w500'],
+}
 
 export class TmdbService {
   static getMediaImages = async (id: number, mediaType: MediaType) => {
@@ -26,44 +32,37 @@ export class TmdbService {
     try {
       const response = await fetch(url, options)
       const imagesResponse = (await response.json()) as GetImagesResponse
-      let images: MediaImages = {
-        backdrops: TmdbService.selectImage(imagesResponse.backdrops),
-        logos: TmdbService.selectImage(imagesResponse.logos),
-        posters: TmdbService.selectImage(imagesResponse.posters),
+      const images: MediaImages = {
+        backdrops: TmdbService.selectImage(imagesResponse.backdrops, 'backdrops'),
+        logos: TmdbService.selectImage(imagesResponse.logos, 'logos'),
+        posters: TmdbService.selectImage(imagesResponse.posters, 'posters'),
       }
-      
-      return TmdbService.addFullPathAddress(images)
+
+      return images
     } catch (e) {
       console.error(e)
     }
   }
 
-  private static selectImage= (images: TmdbImage[]) => {
+  private static selectImage = (images: TmdbImage[], imageType: 'backdrops' | 'logos' | 'posters') => {
     let image = images?.sort((a, b) => {
       // Prioritize by language English > Portuguese
-      if (a.iso_639_1 === "en" && b.iso_639_1 !== "en") return -1;
-      if (b.iso_639_1 === "en" && a.iso_639_1 !== "en") return 1;
+      if (a.iso_639_1 === 'en' && b.iso_639_1 !== 'en') return -1
+      if (b.iso_639_1 === 'en' && a.iso_639_1 !== 'en') return 1
 
-      if (a.iso_639_1 === "pt" && b.iso_639_1 !== "pt") return -1;
-      if (b.iso_639_1 === "pt" && a.iso_639_1 !== "pt") return 1;
-    
+      if (a.iso_639_1 === 'pt' && b.iso_639_1 !== 'pt') return -1
+      if (b.iso_639_1 === 'pt' && a.iso_639_1 !== 'pt') return 1
+
       // Finally, sort by vote_average in descending order
-      return (b.vote_average ?? 0) - (a.vote_average ?? 0);
-    })
-    return image?.[0]
-  }
+      return (b.vote_average ?? 0) - (a.vote_average ?? 0)
+    })?.[0]
 
-  private static addFullPathAddress = (images: MediaImages) => {
-    if(images.backdrops) {
-      images.backdrops.file_path = `https://image.tmdb.org/t/p/original${images.backdrops.file_path}`
+    const selectImage: Image = {
+      ...image,
+      base_path: 'https://image.tmdb.org/t/p',
+      sizes: imageSizes[imageType],
     }
-    if(images.logos) {
-      images.logos.file_path = `https://image.tmdb.org/t/p/original${images.logos.file_path}`
-    }
-    if(images.posters) {
-      images.posters.file_path = `https://image.tmdb.org/t/p/original${images.posters.file_path}`
-    }
-    return images
+    return selectImage
   }
 
   private static getRequestOptions = () => {
