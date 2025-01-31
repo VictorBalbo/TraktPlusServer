@@ -13,6 +13,6 @@ TmdbController.get(movieImageUri, async (req, res, next) => {
       res.status(400).send('Invalid content type. Content must be Movie or Show.')
       return
   } 
-  const images = await TmdbService.getMediaImages(id, type)
+  const images = await TmdbService.getMediaImages(type, id)
   res.json(images)
 })

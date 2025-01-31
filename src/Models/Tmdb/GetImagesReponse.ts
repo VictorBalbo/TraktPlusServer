@@ -3,6 +3,7 @@ export interface GetImagesResponse {
   id: number
   logos: TmdbImage[]
   posters: TmdbImage[]
+  stills: TmdbImage[]
 }
 
 export interface TmdbImage {

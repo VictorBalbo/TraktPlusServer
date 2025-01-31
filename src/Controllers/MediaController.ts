@@ -27,3 +27,11 @@ MediaController.get(moviesTrendingUri, async (req, res, next) => {
   const recommendations = await MediaService.getTrending(accessToken, type)
   res.json(recommendations)
 })
+
+const upNextUri = '/upnext'
+MediaController.get(upNextUri, async (req, res, next) => {
+  const accessToken = req.headers.authorization ?? ''
+
+  const recommendations = await MediaService.getUpNextShows(accessToken)
+  res.json(recommendations)
+})

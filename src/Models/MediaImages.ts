@@ -2,6 +2,7 @@ export interface MediaImages {
   backdrops?: Image
   logos?: Image
   posters?: Image
+  stills?: Image
 }
 
 export interface Image {

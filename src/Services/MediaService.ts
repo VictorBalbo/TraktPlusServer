@@ -1,6 +1,13 @@
-import { Media, MediaType } from '../Models'
-import { Recommendation, TraktContentResponse, Trending } from '../Models/Trakt'
+import { Episode, Media, MediaType } from '../Models'
+import {
+  Recommendation,
+  ShowProgress,
+  TraktContentResponse,
+  Trending,
+  WatchedShow,
+} from '../Models/Trakt'
 import { TmdbService, TraktService } from '.'
+
 export class MediaService {
   private static PAGE_SIZE = 25
 
@@ -27,6 +34,44 @@ export class MediaService {
     return medias
   }
 
+  static getUpNextShows = async (accessToken: string) => {
+    const watchedShowsUrl = '/sync/watched/shows'
+    const showProgressUrl = '/shows/{id}/progress/watched'
+    const watchedShows = await TraktService.sendTraktGetRequest<WatchedShow[]>(
+      watchedShowsUrl,
+      accessToken,
+    )
+
+    const upNextPromise = watchedShows.map(async (s) => {
+      const showProgress = await TraktService.sendTraktGetRequest<ShowProgress>(
+        showProgressUrl.replace('{id}', s.show.ids.trakt.toString()),
+        accessToken,
+      )
+      const nextEpisode = showProgress.next_episode
+      if (!nextEpisode) {
+        return
+      }
+      const episode: Episode = {
+        type: MediaType.Episode,
+        title: nextEpisode.title,
+        ids: nextEpisode.ids,
+        number: nextEpisode.number,
+        season: nextEpisode.season,
+        show: s.show.title,
+        images: await TmdbService.getMediaImages(
+          MediaType.Episode,
+          s.show.ids.tmdb,
+          nextEpisode.season,
+          nextEpisode.number,
+        ),
+      }
+      return episode
+    })
+
+    const upNext = await Promise.all(upNextPromise)
+    return upNext.filter(s => s)
+  }
+
   private static async fillImages(contentResponse: TraktContentResponse[]) {
     const mediasPromise: Promise<Media>[] = contentResponse.map(async (c) => {
       let content = c.movie ?? c.show!
@@ -37,7 +82,7 @@ export class MediaService {
         title: content.title,
         ids: content.ids,
         year: content.year,
-        images: await TmdbService.getMediaImages(content.ids.tmdb, mediatype),
+        images: await TmdbService.getMediaImages(mediatype, content.ids.tmdb),
       }
       return media
     })

@@ -8,10 +8,16 @@ const imageSizes = {
   backdrops: ['w300', 'w780', 'w1280'],
   logos: ['w45', 'w92', 'w154', 'w185', 'w300'],
   posters: ['w92', 'w154', 'w185', 'w342', 'w500'],
+  stills: ['w92', 'w185', 'w300'],
 }
 
 export class TmdbService {
-  static getMediaImages = async (id: number, mediaType: MediaType) => {
+  static getMediaImages = async (
+    mediaType: MediaType,
+    id: number,
+    seasonId?: number,
+    episodeId?: number,
+  ) => {
     let url: string
     switch (mediaType) {
       case MediaType.Movie:
@@ -21,10 +27,10 @@ export class TmdbService {
         url = `${tmdbApiBaseUri}/tv/${id}/images`
         break
       case MediaType.Season:
-        url = `${tmdbApiBaseUri}/tv/${id}/season/${id}images`
+        url = `${tmdbApiBaseUri}/tv/${id}/season/${seasonId}images`
         break
       case MediaType.Episode:
-        url = `${tmdbApiBaseUri}/tv/${id}/season/${id}/episode/${id}/images`
+        url = `${tmdbApiBaseUri}/tv/${id}/season/${seasonId}/episode/${episodeId}/images`
         break
     }
     const options = TmdbService.getRequestOptions()
@@ -36,6 +42,7 @@ export class TmdbService {
         backdrops: TmdbService.selectImage(imagesResponse.backdrops, 'backdrops'),
         logos: TmdbService.selectImage(imagesResponse.logos, 'logos'),
         posters: TmdbService.selectImage(imagesResponse.posters, 'posters'),
+        stills: TmdbService.selectImage(imagesResponse.stills, 'stills'),
       }
 
       return images
@@ -44,7 +51,13 @@ export class TmdbService {
     }
   }
 
-  private static selectImage = (images: TmdbImage[], imageType: 'backdrops' | 'logos' | 'posters') => {
+  private static selectImage = (
+    images: TmdbImage[],
+    imageType: 'backdrops' | 'logos' | 'posters' | 'stills',
+  ) => {
+    if(!images?.length) {
+      return 
+    }
     let image = images?.sort((a, b) => {
       // Prioritize by language English > Portuguese
       if (a.iso_639_1 === 'en' && b.iso_639_1 !== 'en') return -1
