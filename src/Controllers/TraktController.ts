@@ -5,7 +5,7 @@ export const TraktController = Router()
 
 const traktApiBaseUri = 'https://api.trakt.tv'
 
-const oAuthTokenUri = '/oauth/token/:code'
+export const oAuthTokenUri = '/oauth/token/:code'
 TraktController.post(oAuthTokenUri, async (req, res, next) => {
   try {
     const code = req.params.code

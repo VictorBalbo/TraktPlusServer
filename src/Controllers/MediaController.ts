@@ -16,7 +16,7 @@ MediaController.get(moviesTrendingUri, async (req, res, next) => {
   const accessToken = req.headers.authorization ?? ''
   let type
 
-  if(req.params.type === MediaType.Movie) {
+  if (req.params.type === MediaType.Movie) {
     type = MediaType.Movie
   } else if (req.params.type === MediaType.Show) {
     type = MediaType.Show
@@ -42,4 +42,15 @@ MediaController.get(watchlistUri, async (req, res, next) => {
 
   const recommendations = await MediaService.getWatchlist(accessToken)
   res.json(recommendations)
+})
+
+const movieDetailtUri = '/movie/:id'
+const showDetailtUri = '/show/:id/'
+const seasonDetailtUri = '/season/:id/:seasonId'
+const episodeDetailtUri = '/episode/:id/:seasonId/:episodeId'
+MediaController.get(movieDetailtUri, async (req, res, next) => {
+  const accessToken = req.headers.authorization ?? ''
+  const mediaId = req.params.id
+  const movie = await MediaService.getMovieDetail(accessToken, mediaId)
+  res.json(movie)
 })

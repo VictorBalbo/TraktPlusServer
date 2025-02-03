@@ -1,13 +1,15 @@
 import { Episode, Media, MediaType } from '../Models'
 import {
+  TraktMovieDetails,
   Recommendation,
   ShowProgress,
   TraktContentResponse,
   Trending,
+  WatchList,
   WatchedShow,
 } from '../Models/Trakt'
-import { TmdbService, TraktService } from '.'
-import { WatchList } from 'src/Models/Trakt/WatchList'
+import { JustWatchService, TmdbService, TraktService } from '.'
+import { MovieDetails } from 'src/Models/MovieDetails'
 
 export class MediaService {
   private static PAGE_SIZE = 25
@@ -70,7 +72,7 @@ export class MediaService {
     })
 
     const upNext = await Promise.all(upNextPromise)
-    return upNext.filter(s => s)
+    return upNext.filter((s) => s)
   }
 
   static getWatchlist = async (accessToken: string) => {
@@ -79,6 +81,25 @@ export class MediaService {
     const watchlist = await TraktService.sendTraktGetRequest<WatchList[]>(url, accessToken)
     const medias = await MediaService.fillImages(watchlist)
     return medias
+  }
+
+  static getMovieDetail = async (accessToken: string, id: string) => {
+    let url = `/movies/${id}?extended=full`
+
+    const movieDetails = await TraktService.sendTraktGetRequest<TraktMovieDetails>(url, accessToken)
+    const watchProviders = await JustWatchService.searchMediaProviders(
+      movieDetails.ids.slug ?? movieDetails.title,
+      movieDetails.ids.imdb,
+    )
+    const images = await TmdbService.getMediaImages(MediaType.Movie, movieDetails.ids.tmdb)
+    const movie: MovieDetails = {
+      ...movieDetails,
+      type: MediaType.Movie,
+      images,
+      providers: watchProviders
+      
+    }
+    return movie
   }
 
   private static async fillImages(contentResponse: TraktContentResponse[]) {
