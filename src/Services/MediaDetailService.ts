@@ -126,4 +126,56 @@ export class MediaDetailsService {
     }
     return show
   }
+
+  static getEpisodeDetail = async (
+    accessToken: string,
+    id: string,
+    seasonId: string,
+    episodeId: string,
+  ) => {
+    let showDetailsUrl = `/shows/${id}`
+    let episodesDetailsUrl = `/shows/${id}/seasons/${seasonId}/episodes/${episodeId}?extended=full`
+
+    const showDetails = await TraktService.sendTraktGetRequest<TraktShowDetails>(
+      showDetailsUrl,
+      accessToken,
+    )
+    const episodesDetails = await TraktService.sendTraktGetRequest<TraktEpisodeDetails>(
+      episodesDetailsUrl,
+      accessToken,
+    )
+    const watchProviders = await JustWatchService.searchMediaProviders(
+      showDetails.ids.slug ?? showDetails.title,
+      showDetails.ids.imdb,
+    )
+
+    const showImages = await TmdbService.getMediaImages(MediaType.Show, showDetails.ids.tmdb)
+    const episodeImages = await TmdbService.getMediaImages(
+      MediaType.Episode,
+      showDetails.ids.tmdb,
+      episodesDetails.season,
+      episodesDetails.number,
+    )
+    const episode: EpisodeDetails = {
+      ...episodesDetails,
+      type: MediaType.Season,
+      show: showDetails.title,
+      images: episodeImages,
+    }
+    const season: SeasonDetails = {
+      type: MediaType.Season,
+      number: episode.season,
+      episodes: [episode],
+      title: `Season ${episode.season}`,
+      ids: episode.ids,
+    }
+    const show: ShowDetails = {
+      ...showDetails,
+      type: MediaType.Show,
+      images: showImages,
+      providers: watchProviders,
+      seasons: [season],
+    }
+    return show
+  }
 }
