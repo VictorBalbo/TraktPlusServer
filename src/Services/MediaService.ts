@@ -83,25 +83,6 @@ export class MediaService {
     return medias
   }
 
-  static getMovieDetail = async (accessToken: string, id: string) => {
-    let url = `/movies/${id}?extended=full`
-
-    const movieDetails = await TraktService.sendTraktGetRequest<TraktMovieDetails>(url, accessToken)
-    const watchProviders = await JustWatchService.searchMediaProviders(
-      movieDetails.ids.slug ?? movieDetails.title,
-      movieDetails.ids.imdb,
-    )
-    const images = await TmdbService.getMediaImages(MediaType.Movie, movieDetails.ids.tmdb)
-    const movie: MovieDetails = {
-      ...movieDetails,
-      type: MediaType.Movie,
-      images,
-      providers: watchProviders
-      
-    }
-    return movie
-  }
-
   private static async fillImages(contentResponse: TraktContentResponse[]) {
     const mediasPromise: Promise<Media>[] = contentResponse.map(async (c) => {
       let content = c.movie ?? c.show!

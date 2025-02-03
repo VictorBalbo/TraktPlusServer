@@ -7,6 +7,18 @@ import { TraktContentResponse } from './TraktContentResponse'
 import { Trending } from './Trending'
 import { WatchedShow } from './WatchedShow'
 import { WatchList } from './WatchList'
+import { TraktSeason, TraktShowDetails } from './TraktShowDetails'
 
-
-export { Content, oAuth, TraktMovieDetails, Recommendation, ShowProgress, TraktContentResponse, Trending, WatchedShow, WatchList }
+export {
+  Content,
+  oAuth,
+  TraktMovieDetails,
+  TraktShowDetails,
+  TraktSeason,
+  Recommendation,
+  ShowProgress,
+  TraktContentResponse,
+  Trending,
+  WatchedShow,
+  WatchList,
+}

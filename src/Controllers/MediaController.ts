@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { MediaService } from '../Services'
+import { MediaDetailsService, MediaService } from '../Services'
 import { MediaType } from '../Models'
 
 export const MediaController = Router()
@@ -45,12 +45,19 @@ MediaController.get(watchlistUri, async (req, res, next) => {
 })
 
 const movieDetailtUri = '/movie/:id'
-const showDetailtUri = '/show/:id/'
 const seasonDetailtUri = '/season/:id/:seasonId'
 const episodeDetailtUri = '/episode/:id/:seasonId/:episodeId'
 MediaController.get(movieDetailtUri, async (req, res, next) => {
   const accessToken = req.headers.authorization ?? ''
   const mediaId = req.params.id
-  const movie = await MediaService.getMovieDetail(accessToken, mediaId)
+  const movie = await MediaDetailsService.getMovieDetail(accessToken, mediaId)
+  res.json(movie)
+})
+
+const showDetailtUri = '/show/:id/'
+MediaController.get(showDetailtUri, async (req, res, next) => {
+  const accessToken = req.headers.authorization ?? ''
+  const mediaId = req.params.id
+  const movie = await MediaDetailsService.getShowDetail(accessToken, mediaId)
   res.json(movie)
 })
