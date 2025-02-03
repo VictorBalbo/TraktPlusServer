@@ -45,7 +45,6 @@ MediaController.get(watchlistUri, async (req, res, next) => {
 })
 
 const movieDetailtUri = '/movie/:id'
-const seasonDetailtUri = '/season/:id/:seasonId'
 const episodeDetailtUri = '/episode/:id/:seasonId/:episodeId'
 MediaController.get(movieDetailtUri, async (req, res, next) => {
   const accessToken = req.headers.authorization ?? ''
@@ -59,5 +58,14 @@ MediaController.get(showDetailtUri, async (req, res, next) => {
   const accessToken = req.headers.authorization ?? ''
   const mediaId = req.params.id
   const movie = await MediaDetailsService.getShowDetail(accessToken, mediaId)
+  res.json(movie)
+})
+
+const seasonDetailtUri = '/show/:id/:seasonId'
+MediaController.get(seasonDetailtUri, async (req, res, next) => {
+  const accessToken = req.headers.authorization ?? ''
+  const mediaId = req.params.id
+  const seasonId = req.params.seasonId
+  const movie = await MediaDetailsService.getSeasonDetail(accessToken, mediaId, seasonId)
   res.json(movie)
 })

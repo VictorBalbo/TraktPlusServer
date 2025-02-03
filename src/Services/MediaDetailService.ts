@@ -1,6 +1,11 @@
-import { TraktMovieDetails, TraktSeasonDetails, TraktShowDetails } from '../Models/Providers/Trakt'
+import {
+  TraktEpisodeDetails,
+  TraktMovieDetails,
+  TraktSeasonDetails,
+  TraktShowDetails,
+} from '../Models/Providers/Trakt'
 import { JustWatchService, TmdbService, TraktService } from '.'
-import { MediaType, MovieDetails, SeasonDetails, ShowDetails } from '../Models'
+import { EpisodeDetails, MediaType, MovieDetails, SeasonDetails, ShowDetails } from '../Models'
 
 export class MediaDetailsService {
   static getMovieDetail = async (accessToken: string, id: string) => {
@@ -59,6 +64,65 @@ export class MediaDetailsService {
       images: showImages,
       providers: watchProviders,
       seasons: await Promise.all(seasons),
+    }
+    return show
+  }
+
+  static getSeasonDetail = async (accessToken: string, id: string, seasonId: string) => {
+    let showDetailsUrl = `/shows/${id}`
+    let showSeasonsUrl = `/shows/${id}/seasons/${seasonId}/info?extended=full`
+    let episodesDetailsUrl = `/shows/${id}/seasons/${seasonId}?extended=full`
+
+    const showDetails = await TraktService.sendTraktGetRequest<TraktShowDetails>(
+      showDetailsUrl,
+      accessToken,
+    )
+    const showSeasons = await TraktService.sendTraktGetRequest<TraktSeasonDetails>(
+      showSeasonsUrl,
+      accessToken,
+    )
+    const episodesDetails = await TraktService.sendTraktGetRequest<TraktEpisodeDetails[]>(
+      episodesDetailsUrl,
+      accessToken,
+    )
+    const watchProviders = await JustWatchService.searchMediaProviders(
+      showDetails.ids.slug ?? showDetails.title,
+      showDetails.ids.imdb,
+    )
+
+    const showImages = await TmdbService.getMediaImages(MediaType.Show, showDetails.ids.tmdb)
+    const seasonImages = await TmdbService.getMediaImages(
+      MediaType.Season,
+      showDetails.ids.tmdb,
+      showSeasons.number,
+    )
+    const episodes = episodesDetails.map(async (e) => {
+      const episodeImages = await TmdbService.getMediaImages(
+        MediaType.Episode,
+        showDetails.ids.tmdb,
+        e.season,
+        e.number,
+      )
+      const episode: EpisodeDetails = {
+        ...e,
+        type: MediaType.Season,
+        show: showDetails.title,
+        images: episodeImages,
+      }
+      return episode
+    })
+    const season: SeasonDetails = {
+      ...showSeasons,
+      type: MediaType.Season,
+      images: seasonImages,
+      episodes: await Promise.all(episodes),
+    }
+    const show: ShowDetails = {
+      ...showDetails,
+      type: MediaType.Show,
+      images: showImages,
+      providers: watchProviders,
+      seasons: [season],
     }
     return show
   }
