@@ -1,9 +1,6 @@
-import { Ids } from '..'
+import { Content, TraktSeasonDetails } from '..'
 
-export interface TraktShowDetails {
-  title: string
-  year: number
-  ids: Ids
+export interface TraktShowDetails extends Content {
   tagline: string
   overview: string
   first_aired: string
@@ -21,28 +18,13 @@ export interface TraktShowDetails {
   updated_at: string
   language: string
   languages: string[]
-  available_translations: string[]
   genres: string[]
   aired_episodes: number
-  seasons?: TraktSeason[]
+  seasons?: TraktSeasonDetails[]
 }
 
 interface Airs {
   day: string
   time: string
   timezone: string
-}
-
-export interface TraktSeason {
-  number: number
-  ids: Ids
-  rating: number
-  votes: number
-  episode_count: number
-  aired_episodes: number
-  title: string
-  overview?: string
-  first_aired: string
-  updated_at: string
-  network: string
 }

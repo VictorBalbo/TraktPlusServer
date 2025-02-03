@@ -1,15 +1,13 @@
-import { Episode, Media, MediaType } from '../Models'
 import {
-  TraktMovieDetails,
   Recommendation,
   ShowProgress,
   TraktContentResponse,
   Trending,
-  WatchList,
   WatchedShow,
-} from '../Models/Trakt'
-import { JustWatchService, TmdbService, TraktService } from '.'
-import { MovieDetails } from 'src/Models/MovieDetails'
+  WatchList,
+} from '../Models/Providers/Trakt'
+import { EpisodeDetails, Media, MediaType } from '../Models'
+import { TmdbService, TraktService } from '.'
 
 export class MediaService {
   private static PAGE_SIZE = 25
@@ -54,13 +52,14 @@ export class MediaService {
       if (!nextEpisode) {
         return
       }
-      const episode: Episode = {
+      const episode: EpisodeDetails = {
         type: MediaType.Episode,
         title: nextEpisode.title,
         ids: nextEpisode.ids,
         number: nextEpisode.number,
         season: nextEpisode.season,
         show: s.show.title,
+        year: s.show.year,
         images: await TmdbService.getMediaImages(
           MediaType.Episode,
           s.show.ids.tmdb,

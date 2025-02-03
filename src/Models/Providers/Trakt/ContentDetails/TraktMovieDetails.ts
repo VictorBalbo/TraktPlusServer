@@ -1,9 +1,6 @@
-import { Ids } from "../Ids"
+import { Content } from '..'
 
-export interface TraktMovieDetails {
-  title: string
-  year: number
-  ids: Ids
+export interface TraktMovieDetails extends Content {
   tagline: string
   overview: string
   released: string
@@ -18,7 +15,6 @@ export interface TraktMovieDetails {
   updated_at: string
   language: string
   languages: string[]
-  available_translations: string[]
   genres: string[]
   certification: string
 }

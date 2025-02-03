@@ -1,4 +1,4 @@
-import { Content } from "."
+import { Content } from '.'
 
 export interface TraktContentResponse {
   type?: string

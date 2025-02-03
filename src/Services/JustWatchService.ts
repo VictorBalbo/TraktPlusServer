@@ -1,4 +1,4 @@
-import { GetProvidersByMediaName } from 'src/Models/JustWatch'
+import { GetProvidersByMediaName } from 'src/Models/Providers/JustWatch'
 import { WatchProvider } from 'src/Models/WatchProvider'
 
 export class JustWatchService {

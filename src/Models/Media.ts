@@ -1,23 +1,17 @@
-import { Ids, MediaImages } from '../Models'
-
+import { Ids, MediaImages, WatchProvider } from '../Models'
 
 export interface Media {
   title: string
-  year?: number
   ids: Ids
   type: MediaType
+  year?: number
   images?: MediaImages
-}
-
-export interface Episode extends Media {
-  season: number
-  number: number
-  show: string
+  providers?: WatchProvider[]
 }
 
 export enum MediaType {
   Movie = 'movie',
-  Show = 'show', 
+  Show = 'show',
   Season = 'season',
-  Episode = 'episode'
+  Episode = 'episode',
 }

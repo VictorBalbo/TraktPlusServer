@@ -1,6 +1,6 @@
 import { Image } from 'src/Models/MediaImages'
 import { MediaImages, MediaType } from '../Models'
-import { GetImagesResponse, TmdbImage } from '../Models/Tmdb'
+import { GetImagesResponse, TmdbImage } from '../Models/Providers/Tmdb'
 import { tmdbAccessToken } from '../constants'
 
 const tmdbApiBaseUri = 'https://api.themoviedb.org/3'
@@ -27,7 +27,7 @@ export class TmdbService {
         url = `${tmdbApiBaseUri}/tv/${id}/images`
         break
       case MediaType.Season:
-        url = `${tmdbApiBaseUri}/tv/${id}/season/${seasonId}images`
+        url = `${tmdbApiBaseUri}/tv/${id}/season/${seasonId}/images`
         break
       case MediaType.Episode:
         url = `${tmdbApiBaseUri}/tv/${id}/season/${seasonId}/episode/${episodeId}/images`

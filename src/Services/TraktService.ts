@@ -8,8 +8,8 @@ export class TraktService {
       headers: TraktService.getDefaultHeaders(accesstoken),
     })
     if(response.ok) {
-      const value = (await response.json()) as T
-      return value
+      const value = await response.json()
+      return value as T
     } else {
       throw new Error(`Error on sending command to Trakt. Code: ${response.status} - Message: ${response.statusText}`)
     }

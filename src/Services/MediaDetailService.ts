@@ -1,6 +1,6 @@
-import { MovieDetails, MediaType, ShowDetails, Season } from '../Models'
-import { TraktMovieDetails, TraktSeason, TraktShowDetails } from '../Models/Trakt'
+import { TraktMovieDetails, TraktSeasonDetails, TraktShowDetails } from '../Models/Providers/Trakt'
 import { JustWatchService, TmdbService, TraktService } from '.'
+import { MediaType, MovieDetails, SeasonDetails, ShowDetails } from '../Models'
 
 export class MediaDetailsService {
   static getMovieDetail = async (accessToken: string, id: string) => {
@@ -20,6 +20,7 @@ export class MediaDetailsService {
     }
     return movie
   }
+
   static getShowDetail = async (accessToken: string, id: string) => {
     let showDetailsUrl = `/shows/${id}?extended=full`
     let showSeasonsUrl = `/shows/${id}/seasons?extended=full`
@@ -28,7 +29,7 @@ export class MediaDetailsService {
       showDetailsUrl,
       accessToken,
     )
-    const showSeasons = await TraktService.sendTraktGetRequest<TraktSeason[]>(
+    const showSeasons = await TraktService.sendTraktGetRequest<TraktSeasonDetails[]>(
       showSeasonsUrl,
       accessToken,
     )
@@ -37,16 +38,16 @@ export class MediaDetailsService {
       showDetails.ids.imdb,
     )
 
-    const showImages = await TmdbService.getMediaImages(MediaType.Movie, showDetails.ids.tmdb)
-
+    const showImages = await TmdbService.getMediaImages(MediaType.Show, showDetails.ids.tmdb)
     const seasons = showSeasons.map(async (s) => {
       const seasonImages = await TmdbService.getMediaImages(
         MediaType.Season,
         showDetails.ids.tmdb,
         s.number,
       )
-      const season: Season = {
+      const season: SeasonDetails = {
         ...s,
+        type: MediaType.Season,
         images: seasonImages,
       }
       return season
@@ -54,7 +55,7 @@ export class MediaDetailsService {
 
     const show: ShowDetails = {
       ...showDetails,
-      type: MediaType.Movie,
+      type: MediaType.Show,
       images: showImages,
       providers: watchProviders,
       seasons: await Promise.all(seasons),

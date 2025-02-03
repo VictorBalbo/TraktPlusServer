@@ -1,5 +1,4 @@
-import { Media } from '.'
-import { WatchProvider } from './WatchProvider'
+import { Media } from '..'
 
 export interface MovieDetails extends Media {
   tagline: string
@@ -12,12 +11,7 @@ export interface MovieDetails extends Media {
   status: string
   rating: number
   votes: number
-  comment_count: number
-  updated_at: string
   language: string
-  languages: string[]
-  available_translations: string[]
   genres: string[]
   certification: string
-  providers?: WatchProvider[]
 }
