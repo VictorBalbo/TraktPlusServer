@@ -10,10 +10,9 @@ export const App: Express = express()
 App.use(express.json())
 App.use(cors())
 const checkAuthHeaderMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  if (req.path === oAuthTokenUri) {
+  if (req.path.startsWith('/oauth/token/')) {
     next()
-  }
-  if (req.headers.authorization) {
+  } else if (req.headers.authorization) {
     next()
   } else {
     res.status(401).send('No Authorization header sent')
