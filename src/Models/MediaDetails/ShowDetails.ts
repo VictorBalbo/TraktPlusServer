@@ -13,8 +13,6 @@ export interface ShowDetails extends Media {
   trailer: string
   homepage: string
   status: string
-  rating: number
-  votes: number
   genres: string[]
   aired_episodes: number,
   seasons?: SeasonDetails[]

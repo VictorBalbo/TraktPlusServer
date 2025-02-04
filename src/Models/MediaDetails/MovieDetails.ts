@@ -9,8 +9,6 @@ export interface MovieDetails extends Media {
   trailer: string
   homepage: string
   status: string
-  rating: number
-  votes: number
   language: string
   genres: string[]
   certification: string

@@ -49,7 +49,7 @@ export class JustWatchService {
         package {
           packageId
           clearName
-          icon
+          icon(profile: S100, format: PNG)
         }
       }
     }`
@@ -91,6 +91,10 @@ export class JustWatchService {
       }
       return provider
     })
-    return { watchProviders, scorings: media.node.content.scoring }
+    return {
+      watchProviders,
+      scorings: media.node.content.scoring,
+      justWatchId: media.node.content.fullPath,
+    }
   }
 }
