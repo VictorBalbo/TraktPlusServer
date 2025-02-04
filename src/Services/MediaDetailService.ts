@@ -12,7 +12,7 @@ export class MediaDetailsService {
     let url = `/movies/${id}?extended=full`
 
     const movieDetails = await TraktService.sendTraktGetRequest<TraktMovieDetails>(url, accessToken)
-    const watchProviders = await JustWatchService.searchMediaProviders(
+    const { watchProviders, scorings } = await JustWatchService.searchMediaProviders(
       movieDetails.ids.slug ?? movieDetails.title,
       movieDetails.ids.imdb,
     )
@@ -22,6 +22,7 @@ export class MediaDetailsService {
       type: MediaType.Movie,
       images,
       providers: watchProviders,
+      scorings: scorings,
     }
     return movie
   }
@@ -38,7 +39,7 @@ export class MediaDetailsService {
       showSeasonsUrl,
       accessToken,
     )
-    const watchProviders = await JustWatchService.searchMediaProviders(
+    const { watchProviders, scorings } = await JustWatchService.searchMediaProviders(
       showDetails.ids.slug ?? showDetails.title,
       showDetails.ids.imdb,
     )
@@ -64,6 +65,7 @@ export class MediaDetailsService {
       images: showImages,
       providers: watchProviders,
       seasons: await Promise.all(seasons),
+      scorings,
     }
     return show
   }
@@ -85,7 +87,7 @@ export class MediaDetailsService {
       episodesDetailsUrl,
       accessToken,
     )
-    const watchProviders = await JustWatchService.searchMediaProviders(
+    const { watchProviders, scorings } = await JustWatchService.searchMediaProviders(
       showDetails.ids.slug ?? showDetails.title,
       showDetails.ids.imdb,
     )
@@ -123,6 +125,7 @@ export class MediaDetailsService {
       images: showImages,
       providers: watchProviders,
       seasons: [season],
+      scorings,
     }
     return show
   }
@@ -144,7 +147,7 @@ export class MediaDetailsService {
       episodesDetailsUrl,
       accessToken,
     )
-    const watchProviders = await JustWatchService.searchMediaProviders(
+    const { watchProviders, scorings } = await JustWatchService.searchMediaProviders(
       showDetails.ids.slug ?? showDetails.title,
       showDetails.ids.imdb,
     )
@@ -175,6 +178,7 @@ export class MediaDetailsService {
       images: showImages,
       providers: watchProviders,
       seasons: [season],
+      scorings,
     }
     return show
   }

@@ -28,6 +28,14 @@ export class JustWatchService {
         externalIds {
           imdbId
         }
+        scoring {
+          imdbScore
+          imdbVotes
+          tmdbScore
+          jwRating
+          tomatoMeter
+          certifiedFresh
+        }
       }
       offers(
         country: $country
@@ -66,10 +74,10 @@ export class JustWatchService {
       (m) => m.node.content.externalIds.imdbId === imdbId,
     )
     if (!media) {
-      return
+      return {}
     }
-    
-    const watchProvider = media.node.offers.map(m => {
+
+    const watchProviders = media.node.offers.map((m) => {
       const provider: WatchProvider = {
         monetizationType: m.monetizationType,
         providerUri: m.standardWebURL,
@@ -79,10 +87,10 @@ export class JustWatchService {
           id: m.package.packageId,
           name: m.package.clearName,
           icon: m.package.icon,
-        }
+        },
       }
       return provider
     })
-    return watchProvider
+    return { watchProviders, scorings: media.node.content.scoring }
   }
 }

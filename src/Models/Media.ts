@@ -1,4 +1,4 @@
-import { Ids, MediaImages, WatchProvider } from '../Models'
+import { Ids, MediaImages, Scorings, WatchProvider } from '../Models'
 
 export interface Media {
   title: string
@@ -7,6 +7,7 @@ export interface Media {
   year?: number
   images?: MediaImages
   providers?: WatchProvider[]
+  scorings?: Scorings
 }
 
 export enum MediaType {

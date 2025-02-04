@@ -18,10 +18,20 @@ interface Content {
   fullPath: string
   title: string
   externalIds: ExternalIds
+  scoring: Scorings
 }
 
 interface ExternalIds {
   imdbId: string
+}
+
+interface Scorings {
+  imdbScore: number
+  imdbVotes: number
+  tmdbScore: number
+  jwRating: number
+  tomatoMeter: number
+  certifiedFresh?: boolean
 }
 
 interface Offer {
