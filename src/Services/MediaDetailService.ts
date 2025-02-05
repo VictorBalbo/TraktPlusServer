@@ -12,11 +12,17 @@ export class MediaDetailsService {
     let url = `/movies/${id}?extended=full`
 
     const movieDetails = await TraktService.sendTraktGetRequest<TraktMovieDetails>(url, accessToken)
-    const { watchProviders, scorings, justWatchId } = await JustWatchService.searchMediaProviders(
+    const mediaProvidersPromise = JustWatchService.searchMediaProviders(
       movieDetails.ids.slug ?? movieDetails.title,
       movieDetails.ids.imdb,
     )
-    const images = await TmdbService.getMediaImages(MediaType.Movie, movieDetails.ids.tmdb)
+    const imagesPromise = TmdbService.getMediaImages(MediaType.Movie, movieDetails.ids.tmdb)
+
+    const [{ justWatchId, scorings, watchProviders }, images] = await Promise.all([
+      mediaProvidersPromise,
+      imagesPromise,
+    ])
+
     const movie: MovieDetails = {
       ...movieDetails,
       type: MediaType.Movie,
@@ -27,8 +33,11 @@ export class MediaDetailsService {
         traktScore: movieDetails.rating,
         traktVotes: movieDetails.votes,
       },
+      ids: {
+        ...movieDetails.ids,
+        justwatch: justWatchId,
+      },
     }
-    movie.ids.justwatch = justWatchId
     return movie
   }
 
@@ -36,21 +45,23 @@ export class MediaDetailsService {
     let showDetailsUrl = `/shows/${id}?extended=full`
     let showSeasonsUrl = `/shows/${id}/seasons?extended=full`
 
-    const showDetails = await TraktService.sendTraktGetRequest<TraktShowDetails>(
+    const showDetailsPrimise = TraktService.sendTraktGetRequest<TraktShowDetails>(
       showDetailsUrl,
       accessToken,
     )
-    const showSeasons = await TraktService.sendTraktGetRequest<TraktSeasonDetails[]>(
+    const showSeasonsPromise = TraktService.sendTraktGetRequest<TraktSeasonDetails[]>(
       showSeasonsUrl,
       accessToken,
     )
-    const { watchProviders, scorings, justWatchId } = await JustWatchService.searchMediaProviders(
+    const [showDetails, showSeasons] = await Promise.all([showDetailsPrimise, showSeasonsPromise])
+
+    const watchProviderPromise = JustWatchService.searchMediaProviders(
       showDetails.ids.slug ?? showDetails.title,
       showDetails.ids.imdb,
     )
 
-    const showImages = await TmdbService.getMediaImages(MediaType.Show, showDetails.ids.tmdb)
-    const seasons = showSeasons.map(async (s) => {
+    const showImagesPromise = TmdbService.getMediaImages(MediaType.Show, showDetails.ids.tmdb)
+    const seasonsPromise = showSeasons.map(async (s) => {
       const seasonImages = await TmdbService.getMediaImages(
         MediaType.Season,
         showDetails.ids.tmdb,
@@ -64,19 +75,28 @@ export class MediaDetailsService {
       return season
     })
 
+    const [{ watchProviders, scorings, justWatchId }, showImages, ...seasons] = await Promise.all([
+      watchProviderPromise,
+      showImagesPromise,
+      ...seasonsPromise,
+    ])
+
     const show: ShowDetails = {
       ...showDetails,
       type: MediaType.Show,
       images: showImages,
       providers: watchProviders,
-      seasons: await Promise.all(seasons),
+      seasons: seasons,
       scorings: {
         ...scorings,
         traktScore: showDetails.rating,
         traktVotes: showDetails.votes,
       },
+      ids: {
+        ...showDetails.ids,
+        justwatch: justWatchId,
+      },
     }
-    show.ids.justwatch = justWatchId
     return show
   }
 
@@ -85,30 +105,36 @@ export class MediaDetailsService {
     let showSeasonsUrl = `/shows/${id}/seasons/${seasonId}/info?extended=full`
     let episodesDetailsUrl = `/shows/${id}/seasons/${seasonId}?extended=full`
 
-    const showDetails = await TraktService.sendTraktGetRequest<TraktShowDetails>(
+    const showDetailsPromise = TraktService.sendTraktGetRequest<TraktShowDetails>(
       showDetailsUrl,
       accessToken,
     )
-    const showSeasons = await TraktService.sendTraktGetRequest<TraktSeasonDetails>(
+    const showSeasonsPromise = TraktService.sendTraktGetRequest<TraktSeasonDetails>(
       showSeasonsUrl,
       accessToken,
     )
-    const episodesDetails = await TraktService.sendTraktGetRequest<TraktEpisodeDetails[]>(
+    const episodesDetailsPromise = TraktService.sendTraktGetRequest<TraktEpisodeDetails[]>(
       episodesDetailsUrl,
       accessToken,
     )
-    const { watchProviders, scorings, justWatchId } = await JustWatchService.searchMediaProviders(
+    const [showDetails, showSeasons, episodesDetails] = await Promise.all([
+      showDetailsPromise,
+      showSeasonsPromise,
+      episodesDetailsPromise,
+    ])
+
+    const watchProviderPromise = JustWatchService.searchMediaProviders(
       showDetails.ids.slug ?? showDetails.title,
       showDetails.ids.imdb,
     )
 
-    const showImages = await TmdbService.getMediaImages(MediaType.Show, showDetails.ids.tmdb)
-    const seasonImages = await TmdbService.getMediaImages(
+    const showImagesPromise = TmdbService.getMediaImages(MediaType.Show, showDetails.ids.tmdb)
+    const seasonImagesPromise = TmdbService.getMediaImages(
       MediaType.Season,
       showDetails.ids.tmdb,
       showSeasons.number,
     )
-    const episodes = episodesDetails.map(async (e) => {
+    const episodesPromise = episodesDetails.map(async (e) => {
       const episodeImages = await TmdbService.getMediaImages(
         MediaType.Episode,
         showDetails.ids.tmdb,
@@ -123,11 +149,19 @@ export class MediaDetailsService {
       }
       return episode
     })
+    const [{ watchProviders, scorings, justWatchId }, showImages, seasonImages, ...episodes] =
+      await Promise.all([
+        watchProviderPromise,
+        showImagesPromise,
+        seasonImagesPromise,
+        ...episodesPromise,
+      ])
+
     const season: SeasonDetails = {
       ...showSeasons,
       type: MediaType.Season,
       images: seasonImages,
-      episodes: await Promise.all(episodes),
+      episodes: episodes,
     }
     const show: ShowDetails = {
       ...showDetails,
@@ -154,26 +188,34 @@ export class MediaDetailsService {
     let showDetailsUrl = `/shows/${id}`
     let episodesDetailsUrl = `/shows/${id}/seasons/${seasonId}/episodes/${episodeId}?extended=full`
 
-    const showDetails = await TraktService.sendTraktGetRequest<TraktShowDetails>(
+    const showDetailsPromise = TraktService.sendTraktGetRequest<TraktShowDetails>(
       showDetailsUrl,
       accessToken,
     )
-    const episodesDetails = await TraktService.sendTraktGetRequest<TraktEpisodeDetails>(
+    const episodesDetailsPromise = TraktService.sendTraktGetRequest<TraktEpisodeDetails>(
       episodesDetailsUrl,
       accessToken,
     )
-    const { watchProviders, scorings, justWatchId } = await JustWatchService.searchMediaProviders(
+    const [showDetails, episodesDetails] = await Promise.all([
+      showDetailsPromise,
+      episodesDetailsPromise,
+    ])
+
+    const watchProviderPromise = JustWatchService.searchMediaProviders(
       showDetails.ids.slug ?? showDetails.title,
       showDetails.ids.imdb,
     )
 
-    const showImages = await TmdbService.getMediaImages(MediaType.Show, showDetails.ids.tmdb)
-    const episodeImages = await TmdbService.getMediaImages(
+    const showImagesPromise = TmdbService.getMediaImages(MediaType.Show, showDetails.ids.tmdb)
+    const episodeImagesPromise = TmdbService.getMediaImages(
       MediaType.Episode,
       showDetails.ids.tmdb,
       episodesDetails.season,
       episodesDetails.number,
     )
+    const [{ watchProviders, scorings, justWatchId }, showImages, episodeImages] =
+      await Promise.all([watchProviderPromise, showImagesPromise, episodeImagesPromise])
+
     const episode: EpisodeDetails = {
       ...episodesDetails,
       type: MediaType.Season,
