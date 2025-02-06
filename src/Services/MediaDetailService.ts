@@ -19,6 +19,11 @@ import { zShowDetails } from '../Models/MediaDetails/ShowDetails'
 
 export class MediaDetailsService {
   static getMovieDetail = async (accessToken: string, id: string) => {
+    const cachedMovie = await Redis.findMedia<MovieDetails>(MediaType.Movie, id)
+    if (cachedMovie) {
+      return cachedMovie
+    }
+
     const url = `/movies/${id}?extended=full`
     const movieDetails = await TraktService.sendTraktGetRequest<TraktMovieDetails>(url, accessToken)
 
@@ -54,10 +59,16 @@ export class MediaDetailsService {
     }
 
     const response = zMovieDetails.parse(movie)
+    await Redis.saveMedia(response)
     return response
   }
 
   static getShowDetail = async (accessToken: string, id: string) => {
+    const cachedMovie = await Redis.findMedia<ShowDetails>(MediaType.Show, id)
+    if (cachedMovie) {
+      return cachedMovie
+    }
+
     let showDetailsUrl = `/shows/${id}?extended=full`
     let showSeasonsUrl = `/shows/${id}/seasons?extended=full`
 
@@ -120,6 +131,7 @@ export class MediaDetailsService {
       people: MediaDetailsService.filterMediaPeople(showPeople),
     }
     const response = zShowDetails.parse(show)
+    await Redis.saveMedia(response)
     return response
   }
 
