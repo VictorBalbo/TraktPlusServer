@@ -8,7 +8,7 @@ export const zScorings = z.object({
   tmdbScore: z.number().optional(),
   jwRating: z.number().optional(),
   tomatoMeter: z.number().optional(),
-  certifiedFresh: z.boolean().optional(),
+  certifiedFresh: z.boolean().nullish(),
 })
 
 export type Scorings = z.infer<typeof zScorings>

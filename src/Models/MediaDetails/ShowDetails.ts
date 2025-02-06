@@ -9,20 +9,20 @@ const airsSchema = z.object({
 })
 
 export const zShowDetails = zMedia.extend({
-  tagline: z.string(),
-  overview: z.string(),
-  first_aired: z.string(),
-  airs: airsSchema,
-  runtime: z.number(),
-  certification: z.string(),
-  network: z.string(),
-  country: z.string(),
-  trailer: z.string(),
-  homepage: z.string(),
-  status: z.string(),
-  genres: z.array(z.string()),
-  aired_episodes: z.number(),
-  seasons: z.array(zSeasonDetails).optional(),
+  tagline: z.string().optional(),
+  overview: z.string().optional(),
+  first_aired: z.string().optional(),
+  airs: airsSchema.optional(),
+  runtime: z.number().optional(),
+  certification: z.string().optional(),
+  network: z.string().optional(),
+  country: z.string().optional(),
+  trailer: z.string().optional(),
+  homepage: z.string().optional(),
+  status: z.string().optional(),
+  genres: z.array(z.string()).optional(),
+  aired_episodes: z.number().optional(),
+  seasons: z.array(zSeasonDetails),
 })
 
 export type ShowDetails = z.infer<typeof zShowDetails>

@@ -6,7 +6,7 @@ export const zSeasonDetails = zMedia.extend({
   number: z.number(),
   episode_count: z.number().optional(),
   aired_episodes: z.number().optional(),
-  overview: z.string().optional(),
+  overview: z.string().nullish(),
   first_aired: z.string().optional(),
   network: z.string().optional(),
   episodes: z.array(zEpisodeDetails).optional(),

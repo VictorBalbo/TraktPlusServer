@@ -12,7 +12,7 @@ export class TraktService {
       return value as T
     } else {
       throw new Error(
-        `Error on sending command to Trakt. Code: ${response.status} - Message: ${response.statusText}`,
+        `Error on sending command to Trakt. Uri: ${uri} - Code: ${response.status} - Message: ${response.statusText}`,
       )
     }
   }

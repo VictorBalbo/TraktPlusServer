@@ -15,6 +15,7 @@ import {
 } from '../Models'
 import { Redis } from '../Storage'
 import { zMovieDetails } from '../Models/MediaDetails/MovieDetails'
+import { zShowDetails } from '../Models/MediaDetails/ShowDetails'
 
 export class MediaDetailsService {
   static getMovieDetail = async (accessToken: string, id: string) => {
@@ -35,15 +36,6 @@ export class MediaDetailsService {
       imagesPromise,
     ])
 
-    const maxCast = 15
-    moviePeople.cast = moviePeople.cast.slice(0, maxCast)
-    moviePeople.crew = {
-      directing: moviePeople.crew.directing.filter((d) => d.jobs?.includes('Director')),
-      writing: moviePeople.crew.writing.filter(
-        (d) => d.jobs?.includes('Writer') || d.jobs?.includes('Story'),
-      ),
-    }
-
     const movie: MovieDetails = {
       ...movieDetails,
       type: MediaType.Movie,
@@ -58,7 +50,7 @@ export class MediaDetailsService {
         ...movieDetails.ids,
         justwatch: justWatchId,
       },
-      people: moviePeople,
+      people: MediaDetailsService.filterMediaPeople(moviePeople),
     }
 
     const response = zMovieDetails.parse(movie)
@@ -84,6 +76,9 @@ export class MediaDetailsService {
       showDetails.ids.imdb,
     )
 
+    const peopleUrl = `/shows/${id}/people?extended=images`
+    const showPeoplePromise = TraktService.sendTraktGetRequest<People>(peopleUrl, accessToken)
+
     const showImagesPromise = TmdbService.getMediaImages(MediaType.Show, showDetails.ids.tmdb)
     const seasonsPromise = showSeasons.map(async (s) => {
       const seasonImages = await TmdbService.getMediaImages(
@@ -99,11 +94,13 @@ export class MediaDetailsService {
       return season
     })
 
-    const [{ watchProviders, scorings, justWatchId }, showImages, ...seasons] = await Promise.all([
-      watchProviderPromise,
-      showImagesPromise,
-      ...seasonsPromise,
-    ])
+    const [{ watchProviders, scorings, justWatchId }, showPeople, showImages, ...seasons] =
+      await Promise.all([
+        watchProviderPromise,
+        showPeoplePromise,
+        showImagesPromise,
+        ...seasonsPromise,
+      ])
 
     const show: ShowDetails = {
       ...showDetails,
@@ -120,14 +117,17 @@ export class MediaDetailsService {
         ...showDetails.ids,
         justwatch: justWatchId,
       },
+      people: MediaDetailsService.filterMediaPeople(showPeople),
     }
-    return show
+    const response = zShowDetails.parse(show)
+    return response
   }
 
   static getSeasonDetail = async (accessToken: string, id: string, seasonId: string) => {
-    let showDetailsUrl = `/shows/${id}`
-    let showSeasonsUrl = `/shows/${id}/seasons/${seasonId}/info?extended=full`
-    let episodesDetailsUrl = `/shows/${id}/seasons/${seasonId}?extended=full`
+    const showDetailsUrl = `/shows/${id}`
+    const showSeasonsUrl = `/shows/${id}/seasons/${seasonId}/info?extended=full`
+    const episodesDetailsUrl = `/shows/${id}/seasons/${seasonId}?extended=full`
+    const peopleUrl = `/shows/${id}/seasons/${seasonId}/people?extended=images`
 
     const showDetailsPromise = TraktService.sendTraktGetRequest<TraktShowDetails>(
       showDetailsUrl,
@@ -141,10 +141,12 @@ export class MediaDetailsService {
       episodesDetailsUrl,
       accessToken,
     )
-    const [showDetails, showSeasons, episodesDetails] = await Promise.all([
+    const seasonPeoplePromise = TraktService.sendTraktGetRequest<People>(peopleUrl, accessToken)
+    const [showDetails, showSeasons, episodesDetails, seasonPeople] = await Promise.all([
       showDetailsPromise,
       showSeasonsPromise,
       episodesDetailsPromise,
+      seasonPeoplePromise,
     ])
 
     const watchProviderPromise = JustWatchService.searchMediaProviders(
@@ -198,9 +200,14 @@ export class MediaDetailsService {
         traktScore: showDetails.rating,
         traktVotes: showDetails.votes,
       },
+      ids: {
+        ...showDetails.ids,
+        justwatch: justWatchId,
+      },
+      people: MediaDetailsService.filterMediaPeople(seasonPeople),
     }
-    // show.ids.justwatch = justWatchId
-    return show
+    const response = zShowDetails.parse(show)
+    return response
   }
 
   static getEpisodeDetail = async (
@@ -209,8 +216,9 @@ export class MediaDetailsService {
     seasonId: string,
     episodeId: string,
   ) => {
-    let showDetailsUrl = `/shows/${id}`
-    let episodesDetailsUrl = `/shows/${id}/seasons/${seasonId}/episodes/${episodeId}?extended=full`
+    const showDetailsUrl = `/shows/${id}`
+    const episodesDetailsUrl = `/shows/${id}/seasons/${seasonId}/episodes/${episodeId}?extended=full`
+    const peopleUrl = `/shows/${id}/seasons/${seasonId}/episodes/${episodeId}/people?extended=images`
 
     const showDetailsPromise = TraktService.sendTraktGetRequest<TraktShowDetails>(
       showDetailsUrl,
@@ -220,9 +228,11 @@ export class MediaDetailsService {
       episodesDetailsUrl,
       accessToken,
     )
-    const [showDetails, episodesDetails] = await Promise.all([
+    const episodePeoplePromise = TraktService.sendTraktGetRequest<People>(peopleUrl, accessToken)
+    const [showDetails, episodesDetails, episodePeople] = await Promise.all([
       showDetailsPromise,
       episodesDetailsPromise,
+      episodePeoplePromise,
     ])
 
     const watchProviderPromise = JustWatchService.searchMediaProviders(
@@ -264,8 +274,25 @@ export class MediaDetailsService {
         traktScore: showDetails.rating,
         traktVotes: showDetails.votes,
       },
+      ids: {
+        ...showDetails.ids,
+        justwatch: justWatchId,
+      },
+      people: MediaDetailsService.filterMediaPeople(episodePeople),
     }
-    // show.ids.justwatch = justWatchId
-    return show
+    const response = zShowDetails.parse(show)
+    return response
+  }
+
+  private static filterMediaPeople = (people: People) => {
+    const maxCast = 15
+    people.cast = people.cast.slice(0, maxCast)
+    people.crew = {
+      directing: people.crew.directing.filter((d) => d.jobs?.includes('Director')),
+      writing: people.crew.writing.filter(
+        (d) => d.jobs?.includes('Writer') || d.jobs?.includes('Story'),
+      ),
+    }
+    return people
   }
 }

@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { zPeople } from '../People'
 import { zMedia } from '../Media'
 
 export const zMovieDetails = zMedia.extend({
@@ -14,7 +13,6 @@ export const zMovieDetails = zMedia.extend({
   language: z.string(),
   genres: z.array(z.string()),
   certification: z.string(),
-  people: zPeople,
 })
 
 export type MovieDetails = z.infer<typeof zMovieDetails>

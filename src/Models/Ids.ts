@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export const zIds = z.object({
   trakt: z.number(),
-  slug: z.string(),
+  slug: z.string().optional(),
   imdb: z.string().nullish(),
   tmdb: z.number(),
   justwatch: z.string().nullish(),

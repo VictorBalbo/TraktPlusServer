@@ -4,7 +4,7 @@ export const zImages = z.object({
   aspect_ratio: z.number(),
   height: z.number(),
   width: z.number(),
-  iso_639_1: z.string(),
+  iso_639_1: z.string().nullish(),
   file_path: z.string(),
   base_path: z.string().default('https://image.tmdb.org/t/p'),
   sizes: z.array(z.string()),
