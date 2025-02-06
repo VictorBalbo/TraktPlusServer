@@ -1,25 +1,28 @@
-import { SeasonDetails } from './SeasonDetails'
-import { Media } from '..'
+import { zSeasonDetails } from './SeasonDetails'
+import { z } from 'zod'
+import { zMedia } from '../Media'
 
-export interface ShowDetails extends Media {
-  tagline: string
-  overview: string
-  first_aired: string
-  airs: Airs
-  runtime: number
-  certification: string
-  network: string
-  country: string
-  trailer: string
-  homepage: string
-  status: string
-  genres: string[]
-  aired_episodes: number,
-  seasons?: SeasonDetails[]
-}
+const airsSchema = z.object({
+  day: z.string(),
+  time: z.string(),
+  timezone: z.string(),
+})
 
-interface Airs {
-  day: string
-  time: string
-  timezone: string
-}
+export const zShowDetails = zMedia.extend({
+  tagline: z.string(),
+  overview: z.string(),
+  first_aired: z.string(),
+  airs: airsSchema,
+  runtime: z.number(),
+  certification: z.string(),
+  network: z.string(),
+  country: z.string(),
+  trailer: z.string(),
+  homepage: z.string(),
+  status: z.string(),
+  genres: z.array(z.string()),
+  aired_episodes: z.number(),
+  seasons: z.array(zSeasonDetails).optional(),
+})
+
+export type ShowDetails = z.infer<typeof zShowDetails>

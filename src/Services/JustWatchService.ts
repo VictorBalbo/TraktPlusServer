@@ -3,7 +3,7 @@ import { WatchProvider } from 'src/Models/WatchProvider'
 
 export class JustWatchService {
   private static API_URL = 'https://apis.justwatch.com/graphql'
-  static searchMediaProviders = async (mediaSlug: string, imdbId: string) => {
+  static searchMediaProviders = async (mediaSlug: string, imdbId?: string | null) => {
     const query = `
     query GetProvidersByName(
       $country: Country!

@@ -43,7 +43,7 @@ export class MediaService {
       accessToken,
     )
 
-    const upNextPromise = watchedShows.map(async (s) => {
+    const upNextPromise = watchedShows.map(async (s: WatchedShow) => {
       const showProgress = await TraktService.sendTraktGetRequest<ShowProgress>(
         showProgressUrl.replace('{id}', s.show.ids.trakt.toString()),
         accessToken,

@@ -1,12 +1,15 @@
-import { EpisodeDetails } from './EpisodeDetails'
-import { Media } from '..'
+import { zMedia } from '../Media'
+import { zEpisodeDetails } from './EpisodeDetails'
+import { z } from 'zod'
 
-export interface SeasonDetails extends Media {
-  number: number
-  episode_count?: number
-  aired_episodes?: number
-  overview?: string
-  first_aired?: string
-  network?: string
-  episodes?: EpisodeDetails[]
-}
+export const zSeasonDetails = zMedia.extend({
+  number: z.number(),
+  episode_count: z.number().optional(),
+  aired_episodes: z.number().optional(),
+  overview: z.string().optional(),
+  first_aired: z.string().optional(),
+  network: z.string().optional(),
+  episodes: z.array(zEpisodeDetails).optional(),
+})
+
+export type SeasonDetails = z.infer<typeof zSeasonDetails>

@@ -5,23 +5,44 @@ import {
   TraktShowDetails,
 } from '../Models/Providers/Trakt'
 import { JustWatchService, TmdbService, TraktService } from '.'
-import { EpisodeDetails, MediaType, MovieDetails, SeasonDetails, ShowDetails } from '../Models'
+import {
+  EpisodeDetails,
+  MediaType,
+  MovieDetails,
+  People,
+  SeasonDetails,
+  ShowDetails,
+} from '../Models'
+import { Redis } from '../Storage'
+import { zMovieDetails } from '../Models/MediaDetails/MovieDetails'
 
 export class MediaDetailsService {
   static getMovieDetail = async (accessToken: string, id: string) => {
-    let url = `/movies/${id}?extended=full`
-
+    const url = `/movies/${id}?extended=full`
     const movieDetails = await TraktService.sendTraktGetRequest<TraktMovieDetails>(url, accessToken)
+
     const mediaProvidersPromise = JustWatchService.searchMediaProviders(
       movieDetails.ids.slug ?? movieDetails.title,
       movieDetails.ids.imdb,
     )
+    const peopleUrl = `/movies/${id}/people?extended=images`
+    const moviePeoplePromise = TraktService.sendTraktGetRequest<People>(peopleUrl, accessToken)
     const imagesPromise = TmdbService.getMediaImages(MediaType.Movie, movieDetails.ids.tmdb)
 
-    const [{ justWatchId, scorings, watchProviders }, images] = await Promise.all([
+    const [{ justWatchId, scorings, watchProviders }, moviePeople, images] = await Promise.all([
       mediaProvidersPromise,
+      moviePeoplePromise,
       imagesPromise,
     ])
+
+    const maxCast = 15
+    moviePeople.cast = moviePeople.cast.slice(0, maxCast)
+    moviePeople.crew = {
+      directing: moviePeople.crew.directing.filter((d) => d.jobs?.includes('Director')),
+      writing: moviePeople.crew.writing.filter(
+        (d) => d.jobs?.includes('Writer') || d.jobs?.includes('Story'),
+      ),
+    }
 
     const movie: MovieDetails = {
       ...movieDetails,
@@ -37,8 +58,11 @@ export class MediaDetailsService {
         ...movieDetails.ids,
         justwatch: justWatchId,
       },
+      people: moviePeople,
     }
-    return movie
+
+    const response = zMovieDetails.parse(movie)
+    return response
   }
 
   static getShowDetail = async (accessToken: string, id: string) => {
@@ -175,7 +199,7 @@ export class MediaDetailsService {
         traktVotes: showDetails.votes,
       },
     }
-    show.ids.justwatch = justWatchId
+    // show.ids.justwatch = justWatchId
     return show
   }
 
@@ -241,7 +265,7 @@ export class MediaDetailsService {
         traktVotes: showDetails.votes,
       },
     }
-    show.ids.justwatch = justWatchId
+    // show.ids.justwatch = justWatchId
     return show
   }
 }

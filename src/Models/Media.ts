@@ -1,14 +1,8 @@
-import { Ids, MediaImages, Scorings, WatchProvider } from '../Models'
-
-export interface Media {
-  title: string
-  ids: Ids
-  type: MediaType
-  year?: number
-  images?: MediaImages
-  providers?: WatchProvider[]
-  scorings?: Scorings
-}
+import { z } from 'zod'
+import { zIds } from './Ids'
+import { zMediaImages } from './MediaImages'
+import { zWatchProvider } from './WatchProvider'
+import { zScorings } from './Scorings'
 
 export enum MediaType {
   Movie = 'movie',
@@ -16,3 +10,15 @@ export enum MediaType {
   Season = 'season',
   Episode = 'episode',
 }
+
+export const zMedia = z.object({
+  title: z.string(),
+  ids: zIds,
+  type: z.nativeEnum(MediaType),
+  year: z.number().optional(),
+  images: zMediaImages.optional(),
+  providers: z.array(zWatchProvider).optional(),
+  scorings: zScorings.optional(),
+})
+
+export type Media = z.infer<typeof zMedia>
