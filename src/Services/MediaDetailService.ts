@@ -28,7 +28,7 @@ export class MediaDetailsService {
     const movieDetails = await TraktService.sendTraktGetRequest<TraktMovieDetails>(url, accessToken)
 
     const mediaProvidersPromise = JustWatchService.searchMediaProviders(
-      movieDetails.ids.slug ?? movieDetails.title,
+      movieDetails.title,
       MediaType.Movie,
       movieDetails.ids.imdb,
     )
@@ -84,7 +84,7 @@ export class MediaDetailsService {
     const [showDetails, showSeasons] = await Promise.all([showDetailsPrimise, showSeasonsPromise])
 
     const watchProviderPromise = JustWatchService.searchMediaProviders(
-      showDetails.ids.slug ?? showDetails.title,
+      showDetails.title,
       MediaType.Show,
       showDetails.ids.imdb,
     )
@@ -164,7 +164,7 @@ export class MediaDetailsService {
     ])
 
     const watchProviderPromise = JustWatchService.searchMediaProviders(
-      showDetails.ids.slug ?? showDetails.title,
+      showDetails.title,
       MediaType.Show,
       showDetails.ids.imdb,
     )
@@ -251,7 +251,7 @@ export class MediaDetailsService {
     ])
 
     const watchProviderPromise = JustWatchService.searchMediaProviders(
-      showDetails.ids.slug ?? showDetails.title,
+      showDetails.title,
       MediaType.Show,
       showDetails.ids.imdb,
     )

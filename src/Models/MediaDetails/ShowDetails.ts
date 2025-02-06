@@ -29,7 +29,7 @@ export const zShowDetails = zMedia.extend({
   network: z.string().optional(),
   country: z.string().optional(),
   trailer: z.string().nullish(),
-  homepage: z.string().optional(),
+  homepage: z.string().nullish(),
   status: z.nativeEnum(ShowStatus).optional(),
   genres: z.array(z.string()).optional(),
   aired_episodes: z.number().optional(),

@@ -14,10 +14,13 @@ const imageSizes = {
 export class TmdbService {
   static getMediaImages = async (
     mediaType: MediaType,
-    id: number,
+    id?: number,
     seasonId?: number,
     episodeId?: number,
   ) => {
+    if(!id) {
+      return
+    }
     let url: string
     switch (mediaType) {
       case MediaType.Movie:
