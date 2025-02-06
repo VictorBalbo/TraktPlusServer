@@ -1,9 +1,14 @@
+import { MediaType } from 'src/Models'
 import { GetProvidersByMediaName } from 'src/Models/Providers/JustWatch'
 import { WatchProvider } from 'src/Models/WatchProvider'
 
 export class JustWatchService {
   private static API_URL = 'https://apis.justwatch.com/graphql'
-  static searchMediaProviders = async (mediaSlug: string, imdbId?: string | null) => {
+  static searchMediaProviders = async (
+    mediaSlug: string,
+    mediaType: MediaType,
+    imdbId?: string | null,
+  ) => {
     const query = `
     query GetProvidersByName(
       $country: Country!
@@ -56,10 +61,11 @@ export class JustWatchService {
     const variables = {
       country: 'BR',
       language: 'en',
-      first: 4,
+      first: 10,
       filter: {
         searchQuery: mediaSlug,
         includeTitlesWithoutUrl: true,
+        objectTypes: [mediaType.toUpperCase()],
       },
     }
     const response = await fetch(JustWatchService.API_URL, {

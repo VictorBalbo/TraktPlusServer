@@ -29,6 +29,7 @@ export class MediaDetailsService {
 
     const mediaProvidersPromise = JustWatchService.searchMediaProviders(
       movieDetails.ids.slug ?? movieDetails.title,
+      MediaType.Movie,
       movieDetails.ids.imdb,
     )
     const peopleUrl = `/movies/${id}/people?extended=images`
@@ -84,6 +85,7 @@ export class MediaDetailsService {
 
     const watchProviderPromise = JustWatchService.searchMediaProviders(
       showDetails.ids.slug ?? showDetails.title,
+      MediaType.Show,
       showDetails.ids.imdb,
     )
 
@@ -163,6 +165,7 @@ export class MediaDetailsService {
 
     const watchProviderPromise = JustWatchService.searchMediaProviders(
       showDetails.ids.slug ?? showDetails.title,
+      MediaType.Show,
       showDetails.ids.imdb,
     )
 
@@ -249,6 +252,7 @@ export class MediaDetailsService {
 
     const watchProviderPromise = JustWatchService.searchMediaProviders(
       showDetails.ids.slug ?? showDetails.title,
+      MediaType.Show,
       showDetails.ids.imdb,
     )
 
