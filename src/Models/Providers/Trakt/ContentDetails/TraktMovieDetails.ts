@@ -10,7 +10,7 @@ export const zTraktMovieDetails = z.object({
   released: z.string(),
   runtime: z.number(),
   country: z.string(),
-  trailer: z.string(),
+  trailer: z.string().nullish(),
   homepage: z.string(),
   status: z.string(),
   rating: z.number(),
