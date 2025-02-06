@@ -299,11 +299,17 @@ export class MediaDetailsService {
   private static filterMediaPeople = (people: People) => {
     const maxCast = 15
     people.cast = people.cast.slice(0, maxCast)
-    people.crew = {
-      directing: people.crew.directing.filter((d) => d.jobs?.includes('Director')),
-      writing: people.crew.writing.filter(
-        (d) => d.jobs?.includes('Writer') || d.jobs?.includes('Story'),
-      ),
+    if (people.crew['created by']) {
+      people.crew = {
+        'created by': people.crew['created by'],
+      }
+    } else {
+      people.crew = {
+        directing: people.crew.directing?.filter((d) => d.jobs?.includes('Director')),
+        writing: people.crew.writing?.filter(
+          (d) => d.jobs?.includes('Writer') || d.jobs?.includes('Story'),
+        ),
+      }
     }
     return people
   }

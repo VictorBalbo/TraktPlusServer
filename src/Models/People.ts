@@ -17,8 +17,9 @@ const zCastCrewMember = z.object({
 export const zPeople = z.object({
   cast: z.array(zCastCrewMember),
   crew: z.object({
-    directing: z.array(zCastCrewMember),
-    writing: z.array(zCastCrewMember),
+    directing: z.array(zCastCrewMember).optional(),
+    writing: z.array(zCastCrewMember).optional(),
+    'created by': z.array(zCastCrewMember).optional(),
   }),
 })
 
