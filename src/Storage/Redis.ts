@@ -4,7 +4,7 @@ import { Media, MediaType, MovieDetails } from '../Models'
 
 export class Redis {
   private static client?: RedisDB
-  private static ttl: number = 7 * 60 * 60 * 24 // 1 week
+  private static ttl: number = 60 * 60 * 24 // 1 day
   private static prefix: string = 'trakt-plus'
 
   public static getConnectionAsync = async () => {

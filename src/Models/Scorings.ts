@@ -7,7 +7,7 @@ export const zScorings = z.object({
   imdbVotes: z.number().optional(),
   tmdbScore: z.number().optional(),
   jwRating: z.number().optional(),
-  tomatoMeter: z.number().optional(),
+  tomatoMeter: z.number().nullish(),
   certifiedFresh: z.boolean().nullish(),
 })
 
