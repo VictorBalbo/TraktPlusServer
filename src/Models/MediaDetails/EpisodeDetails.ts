@@ -1,8 +1,7 @@
 import { z } from 'zod'
-import { zMedia } from '../Media'
+import { MediaSchema } from '..'
 
-export const zEpisodeDetails = zMedia.extend({
-  show: z.string(),
+export const EpisodeDetailsSchema = MediaSchema.extend({
   season: z.number(),
   number: z.number(),
   overview: z.string().optional(),
@@ -11,4 +10,4 @@ export const zEpisodeDetails = zMedia.extend({
   episode_type: z.string().optional(),
 })
 
-export type EpisodeDetails = z.infer<typeof zEpisodeDetails>
+export type EpisodeDetails = z.infer<typeof EpisodeDetailsSchema>

@@ -6,23 +6,25 @@ import {
 } from '../Models/Providers/Trakt'
 import { JustWatchService, TmdbService, TraktService } from '.'
 import {
+  Credits,
   EpisodeDetails,
+  MediaImages,
   MediaType,
   MovieDetails,
-  People,
   SeasonDetails,
   ShowDetails,
 } from '../Models'
 import { Redis } from '../Storage'
-import { zMovieDetails } from '../Models/MediaDetails/MovieDetails'
-import { zShowDetails } from '../Models/MediaDetails/ShowDetails'
+import { MovieDetailsSchema } from '../Models/MediaDetails/MovieDetails'
+import { ShowDetailsSchema } from '../Models/MediaDetails/ShowDetails'
+import { TmdbSeasonDetails, TmdbShowDetails } from 'src/Models/Providers/Tmdb'
 
 export class MediaDetailsService {
   static getMovieDetail = async (accessToken: string, id: string) => {
-    const cachedMovie = await Redis.findMedia<MovieDetails>(MediaType.Movie, id)
-    if (cachedMovie) {
-      return cachedMovie
-    }
+    // const cachedMovie = await Redis.findMedia<MovieDetails>(MediaType.Movie, id)
+    // if (cachedMovie) {
+    //   return cachedMovie
+    // }
 
     const url = `/movies/${id}?extended=full`
     const movieDetails = await TraktService.sendTraktGetRequest<TraktMovieDetails>(url, accessToken)
@@ -33,7 +35,7 @@ export class MediaDetailsService {
       movieDetails.ids.imdb,
     )
     const peopleUrl = `/movies/${id}/people?extended=images`
-    const moviePeoplePromise = TraktService.sendTraktGetRequest<People>(peopleUrl, accessToken)
+    const moviePeoplePromise = TraktService.sendTraktGetRequest<Credits>(peopleUrl, accessToken)
     const imagesPromise = TmdbService.getMediaImages(MediaType.Movie, movieDetails.ids.tmdb)
 
     const [{ justWatchId, scorings, watchProviders }, moviePeople, images] = await Promise.all([
@@ -56,265 +58,193 @@ export class MediaDetailsService {
         ...movieDetails.ids,
         justwatch: justWatchId,
       },
-      people: MediaDetailsService.filterMediaPeople(moviePeople),
+      credits: MediaDetailsService.filterMediaPeople(moviePeople, MediaType.Movie),
     }
 
-    const response = zMovieDetails.parse(movie)
-    await Redis.saveMedia(response)
+    const response = MovieDetailsSchema.parse(movie)
+    // await Redis.saveMedia(response)
     return response
   }
 
   static getShowDetail = async (accessToken: string, id: string) => {
-    const cachedMovie = await Redis.findMedia<ShowDetails>(MediaType.Show, id)
-    if (cachedMovie) {
-      return cachedMovie
-    }
+    // const cachedMovie = await Redis.findMedia<ShowDetails>(MediaType.Show, id)
+    // if (cachedMovie) {
+    //   return cachedMovie
+    // }
 
     let showDetailsUrl = `/shows/${id}?extended=full`
     let showSeasonsUrl = `/shows/${id}/seasons?extended=full`
-
-    const showDetailsPrimise = TraktService.sendTraktGetRequest<TraktShowDetails>(
+    const traktShowDetailsPromise = TraktService.sendTraktGetRequest<TraktShowDetails>(
       showDetailsUrl,
       accessToken,
     )
-    const showSeasonsPromise = TraktService.sendTraktGetRequest<TraktSeasonDetails[]>(
+    const traktSeasonsPromise = TraktService.sendTraktGetRequest<TraktSeasonDetails[]>(
       showSeasonsUrl,
       accessToken,
     )
-    const [showDetails, showSeasons] = await Promise.all([showDetailsPrimise, showSeasonsPromise])
+    const [traktShowDetails, traktShowSeasons] = await Promise.all([
+      traktShowDetailsPromise,
+      traktSeasonsPromise,
+    ])
 
     const watchProviderPromise = JustWatchService.searchMediaProviders(
-      showDetails.title,
+      traktShowDetails.title,
       MediaType.Show,
-      showDetails.ids.imdb,
+      traktShowDetails.ids.imdb,
     )
 
-    const peopleUrl = `/shows/${id}/people?extended=images`
-    const showPeoplePromise = TraktService.sendTraktGetRequest<People>(peopleUrl, accessToken)
+    const tmdbUrl = `/tv/${traktShowDetails.ids.tmdb}?append_to_response=videos,content_ratings`
+    const tmdbShowDetailsPromise = TmdbService.sendTmdbGetRequest<TmdbShowDetails>(tmdbUrl)
 
-    const showImagesPromise = TmdbService.getMediaImages(MediaType.Show, showDetails.ids.tmdb)
-    const seasonsPromise = showSeasons.map(async (s) => {
-      const seasonImages = await TmdbService.getMediaImages(
-        MediaType.Season,
-        showDetails.ids.tmdb,
-        s.number,
-      )
+    const peopleUrl = `/shows/${id}/people?extended=images`
+    const showPeoplePromise = TraktService.sendTraktGetRequest<Credits>(peopleUrl, accessToken)
+
+    const [{ watchProviders, scorings, justWatchId }, showPeople, tmdbShowDetails] =
+      await Promise.all([watchProviderPromise, showPeoplePromise, tmdbShowDetailsPromise])
+
+    const showImages: MediaImages = {
+      poster: tmdbShowDetails.poster_path,
+      backdrop: tmdbShowDetails.backdrop_path,
+    }
+
+    const seasons = traktShowSeasons.map((s) => {
+      const tmdbSeason = tmdbShowDetails.seasons.find((tmdbS) => tmdbS.id === s.ids.tmdb)
       const season: SeasonDetails = {
         ...s,
         type: MediaType.Season,
-        images: seasonImages,
+        images: {
+          poster: tmdbSeason?.poster_path,
+        },
       }
       return season
     })
 
-    const [{ watchProviders, scorings, justWatchId }, showPeople, showImages, ...seasons] =
-      await Promise.all([
-        watchProviderPromise,
-        showPeoplePromise,
-        showImagesPromise,
-        ...seasonsPromise,
-      ])
-
     const show: ShowDetails = {
-      ...showDetails,
+      ...traktShowDetails,
       type: MediaType.Show,
       images: showImages,
+      released: traktShowDetails.first_aired,
       providers: watchProviders,
       seasons: seasons,
       scorings: {
         ...scorings,
-        traktScore: showDetails.rating,
-        traktVotes: showDetails.votes,
+        traktScore: traktShowDetails.rating,
+        traktVotes: traktShowDetails.votes,
       },
       ids: {
-        ...showDetails.ids,
+        ...traktShowDetails.ids,
         justwatch: justWatchId,
       },
-      people: MediaDetailsService.filterMediaPeople(showPeople),
+      credits: MediaDetailsService.filterMediaPeople(showPeople, MediaType.Show),
     }
-    const response = zShowDetails.parse(show)
-    await Redis.saveMedia(response)
+    const response = ShowDetailsSchema.parse(show)
+    // await Redis.saveMedia(response)
     return response
   }
 
   static getSeasonDetail = async (accessToken: string, id: string, seasonId: string) => {
-    const showDetailsUrl = `/shows/${id}`
-    const showSeasonsUrl = `/shows/${id}/seasons/${seasonId}/info?extended=full`
-    const episodesDetailsUrl = `/shows/${id}/seasons/${seasonId}?extended=full`
-    const peopleUrl = `/shows/${id}/seasons/${seasonId}/people?extended=images`
+    // const cachedMovie = await Redis.findMedia<ShowDetails>(MediaType.Show, id)
+    // if (cachedMovie) {
+    //   return cachedMovie
+    // }
 
-    const showDetailsPromise = TraktService.sendTraktGetRequest<TraktShowDetails>(
+    let showDetailsUrl = `/shows/${id}?extended=full`
+    const traktShowDetailsPromise = TraktService.sendTraktGetRequest<TraktShowDetails>(
       showDetailsUrl,
       accessToken,
     )
-    const showSeasonsPromise = TraktService.sendTraktGetRequest<TraktSeasonDetails>(
+    let showSeasonsUrl = `/shows/${id}/seasons/${seasonId}/info?extended=full`
+    const traktSeasonPromise = TraktService.sendTraktGetRequest<TraktSeasonDetails>(
       showSeasonsUrl,
       accessToken,
     )
-    const episodesDetailsPromise = TraktService.sendTraktGetRequest<TraktEpisodeDetails[]>(
-      episodesDetailsUrl,
+    let seasonEpisodesUrl = `/shows/${id}/seasons/${seasonId}?extended=full`
+    const traktSeasonEpisodesPromise = TraktService.sendTraktGetRequest<TraktEpisodeDetails[]>(
+      seasonEpisodesUrl,
       accessToken,
     )
-    const seasonPeoplePromise = TraktService.sendTraktGetRequest<People>(peopleUrl, accessToken)
-    const [showDetails, showSeasons, episodesDetails, seasonPeople] = await Promise.all([
-      showDetailsPromise,
-      showSeasonsPromise,
-      episodesDetailsPromise,
-      seasonPeoplePromise,
+    const [traktShowDetails, traktShowSeason, traktSeasonEpisodes] = await Promise.all([
+      traktShowDetailsPromise,
+      traktSeasonPromise,
+      traktSeasonEpisodesPromise,
     ])
 
     const watchProviderPromise = JustWatchService.searchMediaProviders(
-      showDetails.title,
+      traktShowDetails.title,
       MediaType.Show,
-      showDetails.ids.imdb,
+      traktShowDetails.ids.imdb,
     )
 
-    const showImagesPromise = TmdbService.getMediaImages(MediaType.Show, showDetails.ids.tmdb)
-    const seasonImagesPromise = TmdbService.getMediaImages(
-      MediaType.Season,
-      showDetails.ids.tmdb,
-      showSeasons.number,
-    )
-    const episodesPromise = episodesDetails.map(async (e) => {
-      const episodeImages = await TmdbService.getMediaImages(
-        MediaType.Episode,
-        showDetails.ids.tmdb,
-        e.season,
-        e.number,
-      )
+    const tmdbSeasonUrl = `/tv/${traktShowDetails.ids.tmdb}/season/${seasonId}?append_to_response=videos`
+    const tmdbShowSeasonPromise = TmdbService.sendTmdbGetRequest<TmdbSeasonDetails>(tmdbSeasonUrl)
+
+    const peopleUrl = `/shows/${id}/seasons/${seasonId}/people?extended=images`
+    const showPeoplePromise = TraktService.sendTraktGetRequest<Credits>(peopleUrl, accessToken)
+
+    const [{ watchProviders, scorings, justWatchId }, tmdbShowSeason, showPeople] =
+      await Promise.all([watchProviderPromise, tmdbShowSeasonPromise, showPeoplePromise])
+
+    const episodes = traktSeasonEpisodes.map((e) => {
+      const tmdbEpisode = tmdbShowSeason.episodes?.find((episode) => episode.id === e.ids.tmdb)
       const episode: EpisodeDetails = {
         ...e,
-        type: MediaType.Season,
-        show: showDetails.title,
-        images: episodeImages,
+        type: MediaType.Episode,
+        images: {
+          still: tmdbEpisode?.still_path,
+        },
       }
       return episode
     })
-    const [{ watchProviders, scorings, justWatchId }, showImages, seasonImages, ...episodes] =
-      await Promise.all([
-        watchProviderPromise,
-        showImagesPromise,
-        seasonImagesPromise,
-        ...episodesPromise,
-      ])
 
     const season: SeasonDetails = {
-      ...showSeasons,
+      ...traktShowSeason,
       type: MediaType.Season,
-      images: seasonImages,
+      images: {
+        poster: tmdbShowSeason.poster_path,
+      },
       episodes: episodes,
     }
+
     const show: ShowDetails = {
-      ...showDetails,
+      ...traktShowDetails,
       type: MediaType.Show,
-      images: showImages,
+      released: traktShowDetails.first_aired,
       providers: watchProviders,
       seasons: [season],
       scorings: {
         ...scorings,
-        traktScore: showDetails.rating,
-        traktVotes: showDetails.votes,
+        traktScore: traktShowDetails.rating,
+        traktVotes: traktShowDetails.votes,
       },
       ids: {
-        ...showDetails.ids,
+        ...traktShowDetails.ids,
         justwatch: justWatchId,
       },
-      people: MediaDetailsService.filterMediaPeople(seasonPeople),
+      credits: MediaDetailsService.filterMediaPeople(showPeople, MediaType.Season),
     }
-    const response = zShowDetails.parse(show)
+    const response = ShowDetailsSchema.parse(show)
+    // await Redis.saveMedia(response)
     return response
   }
 
-  static getEpisodeDetail = async (
-    accessToken: string,
-    id: string,
-    seasonId: string,
-    episodeId: string,
-  ) => {
-    const showDetailsUrl = `/shows/${id}`
-    const episodesDetailsUrl = `/shows/${id}/seasons/${seasonId}/episodes/${episodeId}?extended=full`
-    const peopleUrl = `/shows/${id}/seasons/${seasonId}/episodes/${episodeId}/people?extended=images`
-
-    const showDetailsPromise = TraktService.sendTraktGetRequest<TraktShowDetails>(
-      showDetailsUrl,
-      accessToken,
-    )
-    const episodesDetailsPromise = TraktService.sendTraktGetRequest<TraktEpisodeDetails>(
-      episodesDetailsUrl,
-      accessToken,
-    )
-    const episodePeoplePromise = TraktService.sendTraktGetRequest<People>(peopleUrl, accessToken)
-    const [showDetails, episodesDetails, episodePeople] = await Promise.all([
-      showDetailsPromise,
-      episodesDetailsPromise,
-      episodePeoplePromise,
-    ])
-
-    const watchProviderPromise = JustWatchService.searchMediaProviders(
-      showDetails.title,
-      MediaType.Show,
-      showDetails.ids.imdb,
-    )
-
-    const showImagesPromise = TmdbService.getMediaImages(MediaType.Show, showDetails.ids.tmdb)
-    const episodeImagesPromise = TmdbService.getMediaImages(
-      MediaType.Episode,
-      showDetails.ids.tmdb,
-      episodesDetails.season,
-      episodesDetails.number,
-    )
-    const [{ watchProviders, scorings, justWatchId }, showImages, episodeImages] =
-      await Promise.all([watchProviderPromise, showImagesPromise, episodeImagesPromise])
-
-    const episode: EpisodeDetails = {
-      ...episodesDetails,
-      type: MediaType.Season,
-      show: showDetails.title,
-      images: episodeImages,
-    }
-    const season: SeasonDetails = {
-      type: MediaType.Season,
-      number: episode.season,
-      episodes: [episode],
-      title: `Season ${episode.season}`,
-      ids: episode.ids,
-    }
-    const show: ShowDetails = {
-      ...showDetails,
-      type: MediaType.Show,
-      images: showImages,
-      providers: watchProviders,
-      seasons: [season],
-      scorings: {
-        ...scorings,
-        traktScore: showDetails.rating,
-        traktVotes: showDetails.votes,
-      },
-      ids: {
-        ...showDetails.ids,
-        justwatch: justWatchId,
-      },
-      people: MediaDetailsService.filterMediaPeople(episodePeople),
-    }
-    const response = zShowDetails.parse(show)
-    return response
-  }
-
-  private static filterMediaPeople = (people: People) => {
+  private static filterMediaPeople = (credits: Credits, mediaType: MediaType) => {
     const maxCast = 15
-    people.cast = people.cast.slice(0, maxCast)
-    if (people.crew['created by']) {
-      people.crew = {
-        'created by': people.crew['created by'],
+    credits.cast = credits.cast.slice(0, maxCast)
+    if (mediaType === MediaType.Show) {
+      credits.crew = {
+        'created by': credits.crew['created by'],
+        writing: credits.crew.writing?.filter(
+          (d) => d.jobs?.includes('Comic Book') || d.jobs?.includes('Story'),
+        ),
       }
-    } else {
-      people.crew = {
-        directing: people.crew.directing?.filter((d) => d.jobs?.includes('Director')),
-        writing: people.crew.writing?.filter(
+    } else if (mediaType === MediaType.Movie) {
+      credits.crew = {
+        directing: credits.crew.directing?.filter((d) => d.jobs?.includes('Director')),
+        writing: credits.crew.writing?.filter(
           (d) => d.jobs?.includes('Writer') || d.jobs?.includes('Story'),
         ),
       }
     }
-    return people
+    return credits
   }
 }

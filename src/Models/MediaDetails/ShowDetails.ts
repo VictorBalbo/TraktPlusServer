@@ -1,11 +1,11 @@
 import { zSeasonDetails } from './SeasonDetails'
 import { z } from 'zod'
-import { zMedia } from '../Media'
+import { MediaDetailsSchema } from '..'
 
 const airsSchema = z.object({
-  day: z.string(),
-  time: z.string(),
-  timezone: z.string(),
+  day: z.string().nullish(),
+  time: z.string().nullish(),
+  timezone: z.string().nullish(),
 })
 
 export enum ShowStatus {
@@ -19,10 +19,7 @@ export enum ShowStatus {
   Ended = 'ended',
 }
 
-export const zShowDetails = zMedia.extend({
-  tagline: z.string().optional(),
-  overview: z.string().optional(),
-  first_aired: z.string().optional(),
+export const ShowDetailsSchema = MediaDetailsSchema.extend({
   airs: airsSchema.optional(),
   runtime: z.number().optional(),
   certification: z.string().optional(),
@@ -31,9 +28,8 @@ export const zShowDetails = zMedia.extend({
   trailer: z.string().nullish(),
   homepage: z.string().nullish(),
   status: z.nativeEnum(ShowStatus).optional(),
-  genres: z.array(z.string()).optional(),
   aired_episodes: z.number().optional(),
   seasons: z.array(zSeasonDetails),
 })
 
-export type ShowDetails = z.infer<typeof zShowDetails>
+export type ShowDetails = z.infer<typeof ShowDetailsSchema>

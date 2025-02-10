@@ -1,9 +1,9 @@
-import { zIds } from '../../../Ids'
+import { IdsSchema } from '../../../Ids'
 import { z } from 'zod'
 
 export const zTraktMovieDetails = z.object({
   title: z.string(),
-  ids: zIds,
+  ids: IdsSchema,
   year: z.number().optional(),
   tagline: z.string(),
   overview: z.string(),

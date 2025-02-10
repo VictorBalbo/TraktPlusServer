@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const zScorings = z.object({
+export const ScoringsSchema = z.object({
   traktScore: z.number().nullish(),
   traktVotes: z.number().nullish(),
   imdbScore: z.number().nullish(),
@@ -11,4 +11,4 @@ export const zScorings = z.object({
   certifiedFresh: z.boolean().nullish(),
 })
 
-export type Scorings = z.infer<typeof zScorings>
+export type Scorings = z.infer<typeof ScoringsSchema>

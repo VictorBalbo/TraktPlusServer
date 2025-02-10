@@ -1,15 +1,29 @@
+import { Ids, IdsSchema } from './Ids'
+import { Scorings, ScoringsSchema } from './Scorings'
+import { Credits, CreditsSchema } from './Credits'
+import { MediaImages, MediaImagesSchema } from './MediaImages'
+import { WatchProvider, WatchProviderSchema } from './WatchProvider'
+
+import { Media, MediaSchema, MediaType } from './Media'
+import { MediaDetailsSchema } from './MediaDetails/MediaDetails'
 import { EpisodeDetails } from './MediaDetails/EpisodeDetails'
-import { MovieDetails } from './MediaDetails/MovieDetails'
 import { SeasonDetails } from './MediaDetails/SeasonDetails'
-import { ShowDetails } from './MediaDetails/ShowDetails'
+import { ShowDetails, ShowDetailsSchema } from './MediaDetails/ShowDetails'
+import { MovieDetails, MovieDetailsSchema } from './MediaDetails/MovieDetails'
 
-import { Ids } from './Ids'
-import { Media, MediaType } from './Media'
-import { MediaImages } from './MediaImages'
-import { WatchProvider } from './WatchProvider'
-import { Scorings } from './Scorings'
-import { People } from './People'
-
-export { Ids, Media, MediaImages, MediaType, People, Scorings, WatchProvider }
+export { Ids, Media, MediaImages, MediaType, Credits, Scorings, WatchProvider }
 
 export { MovieDetails, ShowDetails, SeasonDetails, EpisodeDetails }
+
+// Export schemas
+export {
+  ScoringsSchema,
+  MediaSchema,
+  MediaDetailsSchema,
+  ShowDetailsSchema,
+  MovieDetailsSchema,
+  WatchProviderSchema,
+  IdsSchema,
+  MediaImagesSchema,
+  CreditsSchema,
+}

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const zIds = z.object({
+export const IdsSchema = z.object({
   trakt: z.number(),
   slug: z.string().optional(),
   imdb: z.string().nullish(),
@@ -8,4 +8,4 @@ export const zIds = z.object({
   justwatch: z.string().nullish(),
 })
 
-export type Ids = z.infer<typeof zIds>
+export type Ids = z.infer<typeof IdsSchema>
