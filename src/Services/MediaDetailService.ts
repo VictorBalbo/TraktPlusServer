@@ -6,18 +6,19 @@ import {
 } from '../Models/Providers/Trakt'
 import { JustWatchService, TmdbService, TraktService } from '.'
 import {
+  Episode,
   Credits,
-  EpisodeDetails,
   MediaImages,
   MediaType,
   MovieDetails,
-  SeasonDetails,
+  Season,
   ShowDetails,
+  SeasonDetails,
+  SeasonDetailsSchema,
 } from '../Models'
+import { MovieDetailsSchema, ShowDetailsSchema } from '../Models'
 import { Redis } from '../Storage'
-import { MovieDetailsSchema } from '../Models/MediaDetails/MovieDetails'
-import { ShowDetailsSchema } from '../Models/MediaDetails/ShowDetails'
-import { TmdbSeasonDetails, TmdbShowDetails } from 'src/Models/Providers/Tmdb'
+import { TmdbSeasonDetails, TmdbShowDetails } from '../Models/Providers/Tmdb'
 
 export class MediaDetailsService {
   static getMovieDetail = async (accessToken: string, id: string) => {
@@ -109,9 +110,10 @@ export class MediaDetailsService {
 
     const seasons = traktShowSeasons.map((s) => {
       const tmdbSeason = tmdbShowDetails.seasons.find((tmdbS) => tmdbS.id === s.ids.tmdb)
-      const season: SeasonDetails = {
+      const season: Season = {
         ...s,
         type: MediaType.Season,
+        show: { ...traktShowDetails, type: MediaType.Show },
         images: {
           poster: tmdbSeason?.poster_path,
         },
@@ -142,23 +144,23 @@ export class MediaDetailsService {
     return response
   }
 
-  static getSeasonDetail = async (accessToken: string, id: string, seasonId: string) => {
+  static getSeasonDetail = async (accessToken: string, showId: string, seasonId: string) => {
     // const cachedMovie = await Redis.findMedia<ShowDetails>(MediaType.Show, id)
     // if (cachedMovie) {
     //   return cachedMovie
     // }
 
-    let showDetailsUrl = `/shows/${id}?extended=full`
+    let showDetailsUrl = `/shows/${showId}`
     const traktShowDetailsPromise = TraktService.sendTraktGetRequest<TraktShowDetails>(
       showDetailsUrl,
       accessToken,
     )
-    let showSeasonsUrl = `/shows/${id}/seasons/${seasonId}/info?extended=full`
+    let showSeasonsUrl = `/shows/${showId}/seasons/${seasonId}/info?extended=full`
     const traktSeasonPromise = TraktService.sendTraktGetRequest<TraktSeasonDetails>(
       showSeasonsUrl,
       accessToken,
     )
-    let seasonEpisodesUrl = `/shows/${id}/seasons/${seasonId}?extended=full`
+    let seasonEpisodesUrl = `/shows/${showId}/seasons/${seasonId}?extended=full`
     const traktSeasonEpisodesPromise = TraktService.sendTraktGetRequest<TraktEpisodeDetails[]>(
       seasonEpisodesUrl,
       accessToken,
@@ -175,20 +177,31 @@ export class MediaDetailsService {
       traktShowDetails.ids.imdb,
     )
 
+    const tmdbShowUrl = `/tv/${traktShowDetails.ids.tmdb}`
+    const tmdbShowPromise = TmdbService.sendTmdbGetRequest<TmdbShowDetails>(tmdbShowUrl)
+
     const tmdbSeasonUrl = `/tv/${traktShowDetails.ids.tmdb}/season/${seasonId}?append_to_response=videos`
     const tmdbShowSeasonPromise = TmdbService.sendTmdbGetRequest<TmdbSeasonDetails>(tmdbSeasonUrl)
 
-    const peopleUrl = `/shows/${id}/seasons/${seasonId}/people?extended=images`
-    const showPeoplePromise = TraktService.sendTraktGetRequest<Credits>(peopleUrl, accessToken)
+    const peopleUrl = `/shows/${showId}/seasons/${seasonId}/people?extended=images`
+    const seasonPeoplePromise = TraktService.sendTraktGetRequest<Credits>(peopleUrl, accessToken)
 
-    const [{ watchProviders, scorings, justWatchId }, tmdbShowSeason, showPeople] =
-      await Promise.all([watchProviderPromise, tmdbShowSeasonPromise, showPeoplePromise])
+    const [{ watchProviders, scorings, justWatchId }, tmdbShow, tmdbShowSeason, seasonPeople] =
+      await Promise.all([
+        watchProviderPromise,
+        tmdbShowPromise,
+        tmdbShowSeasonPromise,
+        seasonPeoplePromise,
+      ])
 
+    let seasonRuntime = 0
     const episodes = traktSeasonEpisodes.map((e) => {
       const tmdbEpisode = tmdbShowSeason.episodes?.find((episode) => episode.id === e.ids.tmdb)
-      const episode: EpisodeDetails = {
+      seasonRuntime += e.runtime ?? 0
+      const episode: Episode = {
         ...e,
         type: MediaType.Episode,
+        show: { ...traktShowDetails, type: MediaType.Show },
         images: {
           still: tmdbEpisode?.still_path,
         },
@@ -199,30 +212,30 @@ export class MediaDetailsService {
     const season: SeasonDetails = {
       ...traktShowSeason,
       type: MediaType.Season,
-      images: {
-        poster: tmdbShowSeason.poster_path,
-      },
-      episodes: episodes,
-    }
-
-    const show: ShowDetails = {
-      ...traktShowDetails,
-      type: MediaType.Show,
-      released: traktShowDetails.first_aired,
+      show: { ...traktShowDetails, type: MediaType.Show },
+      released: traktShowSeason.first_aired,
       providers: watchProviders,
-      seasons: [season],
-      scorings: {
-        ...scorings,
-        traktScore: traktShowDetails.rating,
-        traktVotes: traktShowDetails.votes,
-      },
       ids: {
-        ...traktShowDetails.ids,
+        ...traktShowSeason.ids,
         justwatch: justWatchId,
       },
-      credits: MediaDetailsService.filterMediaPeople(showPeople, MediaType.Season),
+      images: {
+        poster: tmdbShowSeason.poster_path,
+        backdrop: tmdbShow.backdrop_path,
+      },
+      scorings: {
+        ...scorings,
+        traktScore: traktShowSeason.rating,
+        traktVotes: traktShowSeason.votes,
+        tmdbScore: tmdbShowSeason.vote_average,
+      },
+      runtime: seasonRuntime,
+      certification: traktShowDetails.certification,
+      episodes: episodes,
+      credits: MediaDetailsService.filterMediaPeople(seasonPeople, MediaType.Season),
     }
-    const response = ShowDetailsSchema.parse(show)
+
+    const response = SeasonDetailsSchema.parse(season) as SeasonDetails
     // await Redis.saveMedia(response)
     return response
   }
@@ -242,6 +255,14 @@ export class MediaDetailsService {
         directing: credits.crew.directing?.filter((d) => d.jobs?.includes('Director')),
         writing: credits.crew.writing?.filter(
           (d) => d.jobs?.includes('Writer') || d.jobs?.includes('Story'),
+        ),
+      }
+    } else {
+      credits.crew = {
+        'created by': credits.crew['created by'],
+        directing: credits.crew.directing?.filter((d) => d.jobs?.includes('Director')),
+        writing: credits.crew.writing?.filter(
+          (d) => d.jobs?.includes('Comic Book') || d.jobs?.includes('Story'),
         ),
       }
     }

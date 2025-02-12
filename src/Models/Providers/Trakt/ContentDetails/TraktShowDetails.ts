@@ -1,4 +1,3 @@
-import { ShowStatus } from '../../../MediaDetails/ShowDetails'
 import { Content, TraktSeasonDetails } from '..'
 
 export interface TraktShowDetails extends Content {
@@ -12,7 +11,7 @@ export interface TraktShowDetails extends Content {
   country: string
   trailer: string
   homepage: string
-  status: ShowStatus
+  status: string
   rating: number
   votes: number
   comment_count: number

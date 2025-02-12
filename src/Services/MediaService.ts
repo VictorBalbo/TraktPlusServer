@@ -6,7 +6,7 @@ import {
   WatchedShow,
   WatchList,
 } from '../Models/Providers/Trakt'
-import { EpisodeDetails, Media, MediaType } from '../Models'
+import { Episode, Media, MediaType } from '../Models'
 import { TmdbService, TraktService } from '.'
 
 export class MediaService {
@@ -52,12 +52,13 @@ export class MediaService {
       if (!nextEpisode) {
         return
       }
-      const episode: EpisodeDetails = {
+      const episode: Episode = {
         type: MediaType.Episode,
         title: nextEpisode.title,
         ids: nextEpisode.ids,
         number: nextEpisode.number,
         season: nextEpisode.season,
+        show: { ...s.show, type: MediaType.Show },
         images: await TmdbService.getMediaImages(
           MediaType.Episode,
           s.show.ids.tmdb,

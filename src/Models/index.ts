@@ -1,29 +1,42 @@
 import { Ids, IdsSchema } from './Ids'
-import { Scorings, ScoringsSchema } from './Scorings'
 import { Credits, CreditsSchema } from './Credits'
 import { MediaImages, MediaImagesSchema } from './MediaImages'
+import { Scorings, ScoringsSchema } from './Scorings'
 import { WatchProvider, WatchProviderSchema } from './WatchProvider'
 
-import { Media, MediaSchema, MediaType } from './Media'
-import { MediaDetailsSchema } from './MediaDetails/MediaDetails'
-import { EpisodeDetails } from './MediaDetails/EpisodeDetails'
-import { SeasonDetails } from './MediaDetails/SeasonDetails'
-import { ShowDetails, ShowDetailsSchema } from './MediaDetails/ShowDetails'
-import { MovieDetails, MovieDetailsSchema } from './MediaDetails/MovieDetails'
+import { Media, MediaDetails, MediaDetailsSchema, MediaSchema, MediaType } from './Media/Media'
+import { Episode, EpisodeSchema } from './Media/Episode'
+import { MovieDetails, MovieDetailsSchema } from './Media/Movie'
+import { Season, SeasonDetails, SeasonDetailsSchema, SeasonSchema } from './Media/Season'
+import { ShowDetails, ShowDetailsSchema } from './Media/Show'
 
-export { Ids, Media, MediaImages, MediaType, Credits, Scorings, WatchProvider }
-
-export { MovieDetails, ShowDetails, SeasonDetails, EpisodeDetails }
-
-// Export schemas
 export {
-  ScoringsSchema,
-  MediaSchema,
-  MediaDetailsSchema,
-  ShowDetailsSchema,
-  MovieDetailsSchema,
-  WatchProviderSchema,
+  Ids,
+  MediaImages,
+  Credits,
+  Scorings,
+  WatchProvider,
+  MediaType,
+  Media,
+  MediaDetails,
+  MovieDetails,
+  ShowDetails,
+  Season,
+  SeasonDetails,
+  Episode,
+}
+
+export {
   IdsSchema,
   MediaImagesSchema,
   CreditsSchema,
+  ScoringsSchema,
+  WatchProviderSchema,
+  MediaSchema,
+  MediaDetailsSchema,
+  MovieDetailsSchema,
+  ShowDetailsSchema,
+  SeasonSchema,
+  SeasonDetailsSchema,
+  EpisodeSchema,
 }
