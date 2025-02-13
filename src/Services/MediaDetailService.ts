@@ -265,6 +265,7 @@ export class MediaDetailsService {
       runtime: seasonRuntime,
       certification: tmdbShow.content_ratings.results.find((r) => r.iso_3166_1 === 'BR')?.rating,
       episodes: episodes,
+      episode_count: episodes?.length,
       credits: MediaDetailsService.filterMediaPeople(seasonPeople, MediaType.Season),
     }
 
@@ -326,7 +327,7 @@ export class MediaDetailsService {
       type: MediaType.Episode,
       title: tmdbEpisode.name,
       ids: traktEpisode.ids,
-      images: { still: tmdbEpisode.still_path, poster: tmdbSeason.poster_path },
+      images: { backdrop: tmdbEpisode.still_path, poster: tmdbSeason.poster_path },
       number: tmdbEpisode.episode_number,
       episode_type: tmdbEpisode.episode_type,
       released: tmdbEpisode.air_date,
@@ -355,18 +356,26 @@ export class MediaDetailsService {
   private static filterMediaPeople = (credits: Credits, mediaType: MediaType) => {
     const maxCast = 15
     credits.cast = credits.cast.slice(0, maxCast)
-    if (mediaType === MediaType.Show) {
-      credits.crew = {
-        'created by': credits.crew['created by'],
-        writing: credits.crew.writing?.filter(
-          (d) => d.jobs?.includes('Comic Book') || d.jobs?.includes('Story'),
-        ),
-      }
-    } else if (mediaType === MediaType.Movie) {
+    if (mediaType === MediaType.Movie) {
       credits.crew = {
         directing: credits.crew.directing?.filter((d) => d.jobs?.includes('Director')),
         writing: credits.crew.writing?.filter(
-          (d) => d.jobs?.includes('Writer') || d.jobs?.includes('Story'),
+          (d) => d.jobs?.some(j => j === 'Comic Book' || j === 'Writer' || j === 'Story'),
+        ),
+      }
+    } else if (mediaType === MediaType.Show) {
+      credits.crew = {
+        'created by': credits.crew['created by'],
+        writing: credits.crew.writing?.filter(
+          (d) => d.jobs?.some(j => j === 'Comic Book' || j === 'Story'),
+        ),
+      }
+    } else if (mediaType === MediaType.Season) {
+      credits.crew = {
+        'created by': credits.crew['created by'],
+        directing: credits.crew.directing?.filter((d) => d.jobs?.includes('Director')),
+        writing: credits.crew.writing?.filter(
+          (d) => d.jobs?.some(j => j === 'Comic Book' || j === 'Story'),
         ),
       }
     } else {
@@ -374,7 +383,7 @@ export class MediaDetailsService {
         'created by': credits.crew['created by'],
         directing: credits.crew.directing?.filter((d) => d.jobs?.includes('Director')),
         writing: credits.crew.writing?.filter(
-          (d) => d.jobs?.includes('Comic Book') || d.jobs?.includes('Story'),
+          (d) => d.jobs?.some(j => j === 'Comic Book' || j === 'Writer' || j === 'Story'),
         ),
       }
     }
