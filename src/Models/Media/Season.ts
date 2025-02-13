@@ -4,9 +4,8 @@ import { EpisodeSchema, MediaDetailsSchema, MediaSchema } from '..'
 export const SeasonSchema = MediaSchema.extend({
   number: z.number(),
   episode_count: z.number().optional(),
-  episodes: z.array(EpisodeSchema).optional(),
   aired_episodes: z.number().optional(),
-  show: MediaSchema,
+  showId: z.number()
 })
 
 export const SeasonDetailsSchema = MediaDetailsSchema.extend({

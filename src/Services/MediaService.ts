@@ -57,8 +57,9 @@ export class MediaService {
         title: nextEpisode.title,
         ids: nextEpisode.ids,
         number: nextEpisode.number,
-        season: nextEpisode.season,
-        show: { ...s.show, type: MediaType.Show },
+        seasonNumber: nextEpisode.season,
+        showId: s.show.ids.trakt,
+        showTitle: s.show.title,
         images: await TmdbService.getMediaImages(
           MediaType.Episode,
           s.show.ids.tmdb,

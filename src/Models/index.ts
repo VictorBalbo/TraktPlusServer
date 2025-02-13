@@ -4,8 +4,15 @@ import { MediaImages, MediaImagesSchema } from './MediaImages'
 import { Scorings, ScoringsSchema } from './Scorings'
 import { WatchProvider, WatchProviderSchema } from './WatchProvider'
 
-import { Media, MediaDetails, MediaDetailsSchema, MediaSchema, MediaType } from './Media/Media'
-import { Episode, EpisodeSchema } from './Media/Episode'
+import {
+  Media,
+  MediaDetails,
+  MediaDetailsSchema,
+  MediaSchema,
+  MediaType,
+  Trailer,
+} from './Media/Media'
+import { Episode, EpisodeDetails, EpisodeDetailsSchema, EpisodeSchema } from './Media/Episode'
 import { MovieDetails, MovieDetailsSchema } from './Media/Movie'
 import { Season, SeasonDetails, SeasonDetailsSchema, SeasonSchema } from './Media/Season'
 import { ShowDetails, ShowDetailsSchema } from './Media/Show'
@@ -24,6 +31,8 @@ export {
   Season,
   SeasonDetails,
   Episode,
+  EpisodeDetails,
+  Trailer,
 }
 
 export {
@@ -39,4 +48,5 @@ export {
   SeasonSchema,
   SeasonDetailsSchema,
   EpisodeSchema,
+  EpisodeDetailsSchema,
 }

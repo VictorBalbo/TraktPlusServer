@@ -1,25 +1,22 @@
-import { IdsSchema } from '../../../Ids'
-import { z } from 'zod'
+import { Ids } from '../../../Ids'
 
-export const zTraktMovieDetails = z.object({
-  title: z.string(),
-  ids: IdsSchema,
-  year: z.number().optional(),
-  tagline: z.string(),
-  overview: z.string(),
-  released: z.string(),
-  runtime: z.number(),
-  country: z.string(),
-  trailer: z.string().nullish(),
-  homepage: z.string(),
-  status: z.string(),
-  rating: z.number(),
-  votes: z.number(),
-  comment_count: z.number(),
-  updated_at: z.string(),
-  language: z.string(),
-  genres: z.array(z.string()),
-  certification: z.string(),
-})
-
-export type TraktMovieDetails = z.infer<typeof zTraktMovieDetails>
+export interface TraktMovieDetails {
+  title: string
+  ids: Ids,
+  year?: number
+  tagline?: string
+  overview?: string
+  released?: string
+  runtime?: number
+  country?: string
+  trailer?: string
+  homepage?: string
+  status?: string
+  rating?: number
+  votes?: number
+  comment_count?: number
+  updated_at?: string
+  language?: string
+  genres?: string[]
+  certification?: string
+}

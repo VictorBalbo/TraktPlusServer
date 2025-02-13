@@ -1,3 +1,5 @@
+import { TmdbVideos } from '.'
+
 export interface TmdbEpisodeDetails {
   air_date: string
   episode_number: number
@@ -12,4 +14,5 @@ export interface TmdbEpisodeDetails {
   still_path: string
   vote_average: number
   vote_count: number
+  videos?: TmdbVideos
 }

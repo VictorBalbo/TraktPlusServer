@@ -1,4 +1,4 @@
-import { TmdbEpisodeDetails } from "."
+import { TmdbEpisodeDetails, TmdbVideos } from '.'
 
 export interface TmdbSeasonDetails {
   air_date: string
@@ -10,4 +10,5 @@ export interface TmdbSeasonDetails {
   poster_path: string
   season_number: number
   vote_average: number
+  videos?: TmdbVideos
 }

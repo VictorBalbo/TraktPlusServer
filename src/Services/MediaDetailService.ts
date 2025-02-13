@@ -8,17 +8,23 @@ import { JustWatchService, TmdbService, TraktService } from '.'
 import {
   Episode,
   Credits,
-  MediaImages,
   MediaType,
   MovieDetails,
   Season,
   ShowDetails,
   SeasonDetails,
   SeasonDetailsSchema,
+  Trailer,
+  EpisodeDetails,
 } from '../Models'
-import { MovieDetailsSchema, ShowDetailsSchema } from '../Models'
-import { Redis } from '../Storage'
-import { TmdbSeasonDetails, TmdbShowDetails } from '../Models/Providers/Tmdb'
+import { MovieDetailsSchema, ShowDetailsSchema, EpisodeDetailsSchema } from '../Models'
+import {
+  TmdbEpisodeDetails,
+  TmdbMovieDetails,
+  TmdbSeasonDetails,
+  TmdbShowDetails,
+  TmdbVideos,
+} from '../Models/Providers/Tmdb'
 
 export class MediaDetailsService {
   static getMovieDetail = async (accessToken: string, id: string) => {
@@ -28,38 +34,51 @@ export class MediaDetailsService {
     // }
 
     const url = `/movies/${id}?extended=full`
-    const movieDetails = await TraktService.sendTraktGetRequest<TraktMovieDetails>(url, accessToken)
+    const traktMovie = await TraktService.sendTraktGetRequest<TraktMovieDetails>(url, accessToken)
 
     const mediaProvidersPromise = JustWatchService.searchMediaProviders(
-      movieDetails.title,
+      traktMovie.title,
       MediaType.Movie,
-      movieDetails.ids.imdb,
+      traktMovie.ids.imdb,
     )
     const peopleUrl = `/movies/${id}/people?extended=images`
     const moviePeoplePromise = TraktService.sendTraktGetRequest<Credits>(peopleUrl, accessToken)
-    const imagesPromise = TmdbService.getMediaImages(MediaType.Movie, movieDetails.ids.tmdb)
 
-    const [{ justWatchId, scorings, watchProviders }, moviePeople, images] = await Promise.all([
+    const tmdbUrl = `/movie/${traktMovie.ids.tmdb}?append_to_response=videos,release_dates`
+    const tmdbMoviePromise = TmdbService.sendTmdbGetRequest<TmdbMovieDetails>(tmdbUrl)
+
+    const [{ justWatchId, scorings, watchProviders }, moviePeople, tmdbMovie] = await Promise.all([
       mediaProvidersPromise,
       moviePeoplePromise,
-      imagesPromise,
+      tmdbMoviePromise,
     ])
 
     const movie: MovieDetails = {
-      ...movieDetails,
+      ...tmdbMovie,
       type: MediaType.Movie,
-      images,
+      released: tmdbMovie.release_date,
+      images: {
+        backdrop: tmdbMovie.backdrop_path,
+        poster: tmdbMovie.poster_path,
+      },
+      genres: tmdbMovie.genres?.map((g) => g.name),
+      language: tmdbMovie.original_language,
       providers: watchProviders,
+      country: tmdbMovie.origin_country.join(', '),
       scorings: {
         ...scorings,
-        traktScore: movieDetails.rating,
-        traktVotes: movieDetails.votes,
+        traktScore: traktMovie.rating,
+        traktVotes: traktMovie.votes,
       },
       ids: {
-        ...movieDetails.ids,
+        ...traktMovie.ids,
         justwatch: justWatchId,
       },
+      certification: tmdbMovie.release_dates.results
+        .find((r) => r.iso_3166_1 === 'BR')
+        ?.release_dates.find((r) => r.certification)?.certification,
       credits: MediaDetailsService.filterMediaPeople(moviePeople, MediaType.Movie),
+      trailers: this.getTrailerVideos(tmdbMovie.videos),
     }
 
     const response = MovieDetailsSchema.parse(movie)
@@ -74,70 +93,83 @@ export class MediaDetailsService {
     // }
 
     let showDetailsUrl = `/shows/${id}?extended=full`
-    let showSeasonsUrl = `/shows/${id}/seasons?extended=full`
-    const traktShowDetailsPromise = TraktService.sendTraktGetRequest<TraktShowDetails>(
+    const traktShow = await TraktService.sendTraktGetRequest<TraktShowDetails>(
       showDetailsUrl,
       accessToken,
     )
-    const traktSeasonsPromise = TraktService.sendTraktGetRequest<TraktSeasonDetails[]>(
-      showSeasonsUrl,
-      accessToken,
-    )
-    const [traktShowDetails, traktShowSeasons] = await Promise.all([
-      traktShowDetailsPromise,
-      traktSeasonsPromise,
-    ])
 
     const watchProviderPromise = JustWatchService.searchMediaProviders(
-      traktShowDetails.title,
+      traktShow.title,
       MediaType.Show,
-      traktShowDetails.ids.imdb,
+      traktShow.ids.imdb,
     )
 
-    const tmdbUrl = `/tv/${traktShowDetails.ids.tmdb}?append_to_response=videos,content_ratings`
+    const tmdbUrl = `/tv/${traktShow.ids.tmdb}?append_to_response=videos,content_ratings`
     const tmdbShowDetailsPromise = TmdbService.sendTmdbGetRequest<TmdbShowDetails>(tmdbUrl)
 
     const peopleUrl = `/shows/${id}/people?extended=images`
     const showPeoplePromise = TraktService.sendTraktGetRequest<Credits>(peopleUrl, accessToken)
 
-    const [{ watchProviders, scorings, justWatchId }, showPeople, tmdbShowDetails] =
-      await Promise.all([watchProviderPromise, showPeoplePromise, tmdbShowDetailsPromise])
+    const [{ watchProviders, scorings, justWatchId }, showPeople, tmdbShow] = await Promise.all([
+      watchProviderPromise,
+      showPeoplePromise,
+      tmdbShowDetailsPromise,
+    ])
 
-    const showImages: MediaImages = {
-      poster: tmdbShowDetails.poster_path,
-      backdrop: tmdbShowDetails.backdrop_path,
-    }
-
-    const seasons = traktShowSeasons.map((s) => {
-      const tmdbSeason = tmdbShowDetails.seasons.find((tmdbS) => tmdbS.id === s.ids.tmdb)
+    let showAiredEpisodes = 0
+    const lastEpisodeToAir = tmdbShow.last_episode_to_air
+    const seasons = tmdbShow.seasons.map((s) => {
+      let airedEpisodes
+      if (s.season_number < lastEpisodeToAir.season_number) {
+        airedEpisodes = s.episode_count
+      } else if (s.season_number === lastEpisodeToAir.season_number) {
+        airedEpisodes = lastEpisodeToAir.episode_number
+      } else {
+        airedEpisodes = 0
+      }
+      showAiredEpisodes += airedEpisodes ?? 0
       const season: Season = {
         ...s,
         type: MediaType.Season,
-        show: { ...traktShowDetails, type: MediaType.Show },
+        ids: { trakt: 0 },
+        title: s.name,
+        number: s.season_number,
+        showId: traktShow.ids.trakt,
+        aired_episodes: airedEpisodes,
         images: {
-          poster: tmdbSeason?.poster_path,
+          poster: s?.poster_path,
         },
       }
       return season
     })
 
     const show: ShowDetails = {
-      ...traktShowDetails,
+      ...tmdbShow,
+      title: tmdbShow.name,
       type: MediaType.Show,
-      images: showImages,
-      released: traktShowDetails.first_aired,
+      images: {
+        poster: tmdbShow.poster_path,
+        backdrop: tmdbShow.backdrop_path,
+      },
+      released: tmdbShow.first_air_date,
+      genres: tmdbShow.genres?.map((g) => g.name),
       providers: watchProviders,
       seasons: seasons,
       scorings: {
         ...scorings,
-        traktScore: traktShowDetails.rating,
-        traktVotes: traktShowDetails.votes,
+        traktScore: traktShow.rating,
+        traktVotes: traktShow.votes,
       },
       ids: {
-        ...traktShowDetails.ids,
+        ...traktShow.ids,
         justwatch: justWatchId,
       },
       credits: MediaDetailsService.filterMediaPeople(showPeople, MediaType.Show),
+      certification: tmdbShow.content_ratings.results.find((r) => r.iso_3166_1 === 'BR')?.rating,
+      trailers: this.getTrailerVideos(tmdbShow.videos),
+      network: tmdbShow.networks?.[0]?.name,
+      country: tmdbShow.origin_country?.[0],
+      aired_episodes: showAiredEpisodes,
     }
     const response = ShowDetailsSchema.parse(show)
     // await Redis.saveMedia(response)
@@ -160,27 +192,21 @@ export class MediaDetailsService {
       showSeasonsUrl,
       accessToken,
     )
-    let seasonEpisodesUrl = `/shows/${showId}/seasons/${seasonId}?extended=full`
-    const traktSeasonEpisodesPromise = TraktService.sendTraktGetRequest<TraktEpisodeDetails[]>(
-      seasonEpisodesUrl,
-      accessToken,
-    )
-    const [traktShowDetails, traktShowSeason, traktSeasonEpisodes] = await Promise.all([
+    const [traktShow, traktSeason] = await Promise.all([
       traktShowDetailsPromise,
       traktSeasonPromise,
-      traktSeasonEpisodesPromise,
     ])
 
     const watchProviderPromise = JustWatchService.searchMediaProviders(
-      traktShowDetails.title,
+      traktShow.title,
       MediaType.Show,
-      traktShowDetails.ids.imdb,
+      traktShow.ids.imdb,
     )
 
-    const tmdbShowUrl = `/tv/${traktShowDetails.ids.tmdb}`
+    const tmdbShowUrl = `/tv/${traktShow.ids.tmdb}?append_to_response=content_ratings`
     const tmdbShowPromise = TmdbService.sendTmdbGetRequest<TmdbShowDetails>(tmdbShowUrl)
 
-    const tmdbSeasonUrl = `/tv/${traktShowDetails.ids.tmdb}/season/${seasonId}?append_to_response=videos`
+    const tmdbSeasonUrl = `/tv/${traktShow.ids.tmdb}/season/${seasonId}?append_to_response=videos`
     const tmdbShowSeasonPromise = TmdbService.sendTmdbGetRequest<TmdbSeasonDetails>(tmdbSeasonUrl)
 
     const peopleUrl = `/shows/${showId}/seasons/${seasonId}/people?extended=images`
@@ -195,28 +221,34 @@ export class MediaDetailsService {
       ])
 
     let seasonRuntime = 0
-    const episodes = traktSeasonEpisodes.map((e) => {
-      const tmdbEpisode = tmdbShowSeason.episodes?.find((episode) => episode.id === e.ids.tmdb)
+    const episodes = tmdbShowSeason.episodes?.map((e) => {
       seasonRuntime += e.runtime ?? 0
       const episode: Episode = {
         ...e,
+        ids: { trakt: 0 },
         type: MediaType.Episode,
-        show: { ...traktShowDetails, type: MediaType.Show },
+        title: e.name,
+        number: e.episode_number,
+        seasonNumber: e.season_number,
+        showId: traktShow.ids.trakt,
         images: {
-          still: tmdbEpisode?.still_path,
+          still: e.still_path,
         },
       }
       return episode
     })
 
     const season: SeasonDetails = {
-      ...traktShowSeason,
+      ...tmdbShowSeason,
       type: MediaType.Season,
-      show: { ...traktShowDetails, type: MediaType.Show },
-      released: traktShowSeason.first_aired,
+      title: tmdbShowSeason.name,
+      number: tmdbShowSeason.season_number,
+      trailers: this.getTrailerVideos(tmdbShowSeason.videos),
+      show: { ...traktShow, type: MediaType.Show },
+      released: tmdbShowSeason.air_date,
       providers: watchProviders,
       ids: {
-        ...traktShowSeason.ids,
+        ...traktSeason.ids,
         justwatch: justWatchId,
       },
       images: {
@@ -225,17 +257,98 @@ export class MediaDetailsService {
       },
       scorings: {
         ...scorings,
-        traktScore: traktShowSeason.rating,
-        traktVotes: traktShowSeason.votes,
+        traktScore: traktSeason.rating,
+        traktVotes: traktSeason.votes,
         tmdbScore: tmdbShowSeason.vote_average,
       },
       runtime: seasonRuntime,
-      certification: traktShowDetails.certification,
+      certification: tmdbShow.content_ratings.results.find((r) => r.iso_3166_1 === 'BR')?.rating,
       episodes: episodes,
       credits: MediaDetailsService.filterMediaPeople(seasonPeople, MediaType.Season),
     }
 
     const response = SeasonDetailsSchema.parse(season) as SeasonDetails
+    // await Redis.saveMedia(response)
+    return response
+  }
+
+  static getEpisodeDetail = async (
+    accessToken: string,
+    showId: string,
+    seasonId: string,
+    episodeId: string,
+  ) => {
+    // const cachedMovie = await Redis.findMedia<ShowDetails>(MediaType.Show, id)
+    // if (cachedMovie) {
+    //   return cachedMovie
+    // }
+
+    let showDetailsUrl = `/shows/${showId}`
+    const traktShowDetailsPromise = TraktService.sendTraktGetRequest<TraktShowDetails>(
+      showDetailsUrl,
+      accessToken,
+    )
+    let seasonEpisodeUrl = `/shows/${showId}/seasons/${seasonId}/episodes/${episodeId}?extended=full`
+    const traktEpisodePromise = TraktService.sendTraktGetRequest<TraktEpisodeDetails>(
+      seasonEpisodeUrl,
+      accessToken,
+    )
+    const [traktShow, traktEpisode] = await Promise.all([
+      traktShowDetailsPromise,
+      traktEpisodePromise,
+    ])
+
+    const watchProviderPromise = JustWatchService.searchMediaProviders(
+      traktShow.title,
+      MediaType.Show,
+      traktShow.ids.imdb,
+    )
+
+    const tmdbSeasonUrl = `/tv/${traktShow.ids.tmdb}/season/${seasonId}`
+    const tmdbSeasonPromise = TmdbService.sendTmdbGetRequest<TmdbSeasonDetails>(tmdbSeasonUrl)
+
+    const tmdbEpisodeUrl = `/tv/${traktShow.ids.tmdb}/season/${seasonId}/episode/${episodeId}?append_to_response=videos`
+    const tmdbEpisodePromise = TmdbService.sendTmdbGetRequest<TmdbEpisodeDetails>(tmdbEpisodeUrl)
+
+    const peopleUrl = `/shows/${showId}/seasons/${seasonId}/episodes/${episodeId}/people?extended=images`
+    const seasonPeoplePromise = TraktService.sendTraktGetRequest<Credits>(peopleUrl, accessToken)
+
+    const [{ watchProviders }, tmdbSeason, tmdbEpisode, seasonPeople] = await Promise.all(
+      [
+        watchProviderPromise,
+        tmdbSeasonPromise,
+        tmdbEpisodePromise,
+        seasonPeoplePromise,
+      ],
+    )
+
+    const episode: EpisodeDetails = {
+      ...tmdbEpisode,
+      type: MediaType.Episode,
+      title: tmdbEpisode.name,
+      ids: traktEpisode.ids,
+      images: { still: tmdbEpisode.still_path, poster: tmdbSeason.poster_path },
+      number: tmdbEpisode.episode_number,
+      episode_type: tmdbEpisode.episode_type,
+      released: tmdbEpisode.air_date,
+      providers: watchProviders,
+      scorings: {
+        traktScore: traktEpisode.rating,
+        traktVotes: traktEpisode.votes,
+        tmdbScore: tmdbEpisode.vote_average,
+      },
+      credits: MediaDetailsService.filterMediaPeople(seasonPeople, MediaType.Episode),
+      trailers: this.getTrailerVideos(tmdbEpisode.videos, MediaType.Episode),
+      show: {
+        type: MediaType.Show,
+        title: traktShow.title,
+        ids: traktShow.ids,
+      },
+      seasonNumber: tmdbSeason.season_number,
+      seasonTitle: tmdbSeason.name,
+    }
+
+    const response = EpisodeDetailsSchema.parse(episode) as EpisodeDetails
     // await Redis.saveMedia(response)
     return response
   }
@@ -267,5 +380,17 @@ export class MediaDetailsService {
       }
     }
     return credits
+  }
+
+  private static getTrailerVideos = (videos?: TmdbVideos, mediaType?: MediaType) => {
+    return videos?.results
+      .filter((v) => v.site === 'YouTube' && v.official === true && v.type === 'Trailer')
+      .map((v) => {
+        const trailer: Trailer = {
+          ...v,
+          url: `https://www.youtube.com/watch?v=${v.key}`,
+        }
+        return trailer
+      })
   }
 }

@@ -1,14 +1,10 @@
-import { TmdbSeasonDetails } from "."
+import { TmdbMediaDetails, TmdbSeasonDetails } from '.'
 
-export interface TmdbShowDetails {
-  id: number
+export interface TmdbShowDetails extends TmdbMediaDetails {
   name: string
-  adult: boolean
-  backdrop_path: string
   created_by: CreatedBy[]
   episode_run_time: any[]
   first_air_date: string
-  genres: Genre[]
   homepage: string
   in_production: boolean
   languages: string[]
@@ -21,19 +17,14 @@ export interface TmdbShowDetails {
   origin_country: string[]
   original_language: string
   original_name: string
-  overview: string
   popularity: number
-  poster_path: string
   seasons: TmdbSeasonDetails[]
   spoken_languages: SpokenLanguage[]
   status: string
-  tagline: string
   type: string
   vote_average: number
   vote_count: number
-  videos: {
-    results: VideoResult[]
-  }
+  content_ratings: { results: ContentRatings[] }
 }
 
 interface CreatedBy {
@@ -43,11 +34,6 @@ interface CreatedBy {
   original_name: string
   gender: number
   profile_path: string
-}
-
-interface Genre {
-  id: number
-  name: string
 }
 
 interface EpisodeToAir {
@@ -79,15 +65,8 @@ interface SpokenLanguage {
   name: string
 }
 
-interface VideoResult {
-  iso_639_1: string
+interface ContentRatings {
+  descriptors: any[]
   iso_3166_1: string
-  name: string
-  key: string
-  site: string
-  size: number
-  type: string
-  official: boolean
-  published_at: string
-  id: string
+  rating: string
 }

@@ -7,8 +7,6 @@ export const MovieSchema = MediaSchema.extend({
 
 export const MovieDetailsSchema = MediaDetailsSchema.extend({
   country: z.string(),
-  trailer: z.string().nullish(),
-  homepage: z.string().nullish(),
   status: z.string(),
   language: z.string(),
 })

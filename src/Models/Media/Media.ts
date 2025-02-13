@@ -21,6 +21,13 @@ export const MediaSchema = z.object({
   images: MediaImagesSchema.optional(),
 })
 
+const TrailerSchema = z.object({
+  iso_639_1: z.string(),
+  name: z.string(),
+  url: z.string(),
+  type: z.string(),
+})
+
 export const MediaDetailsSchema = MediaSchema.extend({
   tagline: z.string().optional(),
   overview: z.string().nullish(),
@@ -31,8 +38,11 @@ export const MediaDetailsSchema = MediaSchema.extend({
   credits: CreditsSchema.optional(),
   certification: z.string().nullish(),
   runtime: z.number().optional(),
+  trailers: z.array(TrailerSchema).nullish(),
+  homepage: z.string().nullish(),
 })
 
 export type Media = z.infer<typeof MediaSchema>
 
+export type Trailer = z.infer<typeof TrailerSchema>
 export type MediaDetails = z.infer<typeof MediaDetailsSchema>
