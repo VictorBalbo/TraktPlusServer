@@ -120,9 +120,9 @@ export class MediaDetailsService {
     const lastEpisodeToAir = tmdbShow.last_episode_to_air
     const seasons = tmdbShow.seasons.map((s) => {
       let airedEpisodes
-      if (s.season_number < lastEpisodeToAir.season_number) {
+      if (s.season_number > 0 && s.season_number < lastEpisodeToAir.season_number) {
         airedEpisodes = s.episode_count
-      } else if (s.season_number === lastEpisodeToAir.season_number) {
+      } else if (s.season_number > 0 && s.season_number === lastEpisodeToAir.season_number) {
         airedEpisodes = lastEpisodeToAir.episode_number
       } else {
         airedEpisodes = 0
@@ -170,6 +170,7 @@ export class MediaDetailsService {
       network: tmdbShow.networks?.[0]?.name,
       country: tmdbShow.origin_country?.[0],
       aired_episodes: showAiredEpisodes,
+      episodes: tmdbShow.number_of_episodes,
     }
     const response = ShowDetailsSchema.parse(show)
     // await Redis.saveMedia(response)
@@ -313,14 +314,12 @@ export class MediaDetailsService {
     const peopleUrl = `/shows/${showId}/seasons/${seasonId}/episodes/${episodeId}/people?extended=images`
     const seasonPeoplePromise = TraktService.sendTraktGetRequest<Credits>(peopleUrl, accessToken)
 
-    const [{ watchProviders }, tmdbSeason, tmdbEpisode, seasonPeople] = await Promise.all(
-      [
-        watchProviderPromise,
-        tmdbSeasonPromise,
-        tmdbEpisodePromise,
-        seasonPeoplePromise,
-      ],
-    )
+    const [{ watchProviders }, tmdbSeason, tmdbEpisode, seasonPeople] = await Promise.all([
+      watchProviderPromise,
+      tmdbSeasonPromise,
+      tmdbEpisodePromise,
+      seasonPeoplePromise,
+    ])
 
     const episode: EpisodeDetails = {
       ...tmdbEpisode,

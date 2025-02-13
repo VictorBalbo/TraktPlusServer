@@ -7,6 +7,7 @@ export const ShowDetailsSchema = MediaDetailsSchema.extend({
   network: z.string().optional(),
   country: z.string().optional(),
   status: z.string().optional(),
+  episodes: z.number().optional(),
   aired_episodes: z.number().optional(),
   seasons: z.array(SeasonSchema),
 })
